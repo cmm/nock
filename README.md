@@ -15,13 +15,15 @@ In case you are wondering what the hell am I on about:
 Syntax matters
 --------------
 
-The only exported way to create Nock terms is by their read syntax,
-which tries to resemble the spec's syntax (as far as Lisp and taste
-allow).
+The only exported way to create Nock terms is by their read syntaxes.
 
-So `?[a b]` in the spec's syntax is `{? [a b]}` here.  Pretty nice, I
-think.  You can freely nest sub-terms inside the noun, they'll be
-automagically evaluated.
+One of those aims to be indistinguashable from the syntax used by the
+spec.  I don't like it much (it takes over some characters that are
+important in Lisp), so there's also another variety.
+
+So you can use `?[a b]` or `{? [a b]}`, depending on the readtable.
+The syntax is recursive, so you can use terms inside nouns -- they
+will be automagically evaluated.
 
 As a side effect, the `[]` noun syntax is available on its own (though
 probably not very useful).  It expands into a call to `LIST*`.
@@ -37,11 +39,11 @@ do use `Slime`, right?).
 
 2. `(ql:quickload "nock")`
 
-3. `(named-readtables:in-readtable nock:user-readtable)`.  Sort of a
+3. `(named-readtables:in-readtable nock:spec-readtable)`.  Sort of a
 mouthful, but only needed to be issued once at the beginning of the
 session.`
 
-4. `(nock:nock {/ [7 [[4 5] [6 14 15]]]}) ;let's try this!`
+4. `(nock:nock /[7 [[4 5] [6 14 15]]]) ;let's try this!`
 ```
 {/ [7 [4 5] 6 14 15]}
  |16| {/ [3 [4 5] 6 14 15]}
@@ -52,7 +54,10 @@ session.`
 (14 . 15)
 ```
 
-5. Note how the output above helpfully shows (on the left-hand side)
+5. Or could use `nock:lisp-friendly-readtable` instead, and write the
+above term as `{/ [7 [[4 5] [6 14 15]]]}`.
+
+6. Note how the output above helpfully shows (on the left-hand side)
 the reductions performed, by spec rule number.  As you become a more
 confident nocker and the verbosity starts bothering you, just turn
 Nock tracing off by saying `(setf nock:*trace* nil)` -- which, in

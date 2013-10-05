@@ -33,15 +33,17 @@ Also eval it right away, unless tracing."
 
 (defun nerm-user-reader (stream char)
   "Read and eval a NERM."
-  (declare (ignode char))
-  (let ((args (let ((*inner-nerm-read-context-p* t))
-                (read-delimited-list #\} stream t))))
+  (declare (ignore char))
+  (let ((args (read-delimited-list #\} stream t)))
     (unless (= (length args) 2)
       (error "invalid NERM syntax"))
-    (let ((make-form `(make-nerm :op ',(first args) :noun ,(second args))))
-      (if *inner-nerm-read-context-p*
-          `(nock ,make-form)
-          make-form))))
+    `(nock (make-nerm :op ',(first args) :noun ,(second args)))))
+
+(defun prefix-reader (stream char)
+  (let* ((op (find-symbol (make-string 1 :initial-element char) (find-package :nock)))
+         (noun (let ((*inner-nerm-read-context-p* t))
+                 (read stream t nil t))))
+    `(nock (make-nerm :op ',op :noun ,noun))))
 
 (defun dollar-reader (stream char)
   "Activate *NOCK-EVAL-READTABLE* for the next one or two SEXPs.
@@ -72,6 +74,14 @@ only read one SEXP."
   (:merge base)
   (:macro-char #\{ #'nerm-eval-reader))
 
-(defreadtable user-readtable
+(defreadtable lisp-friendly-readtable
   (:merge base)
   (:macro-char #\{ #'nerm-user-reader))
+
+(defreadtable spec-readtable
+  (:merge lisp-friendly-readtable)
+  (:macro-char #\* #'prefix-reader)
+  (:macro-char #\? #'prefix-reader)
+  (:macro-char #\+ #'prefix-reader)
+  (:macro-char #\= #'prefix-reader)
+  (:macro-char #\/ #'prefix-reader))
