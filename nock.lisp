@@ -12,10 +12,9 @@
               :annotation ',(nack-annotation nack)))
 
 (defmethod print-object ((nack nack) stream)
-  (print-unreadable-object (nack stream nil nil)
-    (when (nack-annotation nack)
-      (format stream "[~a] " (nack-annotation nack)))
-    (format stream "FAIL: ~a" (nack-term nack))))
+  (when (nack-annotation nack)
+    (format stream "|~a| " (nack-annotation nack)))
+  (format stream "FAIL: ~a" (nack-term nack)))
 
 (defun nack (term)
   "Signal that the evaluation is not going to terminate."
@@ -55,7 +54,7 @@
 (defvar *nock*)
 (defun nock-out (term)
   "The outer Nock evaluator.
-Sets things up according to the value of *TRACE-NOCK-P*, catches nacks."
+Sets things up according to the value of *TRACE*, catches nacks."
   (let ((*nock* (if *trace*
                     #'nock-in-traced
                     #'nock-in)))

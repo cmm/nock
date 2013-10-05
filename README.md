@@ -2,8 +2,8 @@ nock - a didactic Nock evaluator
 ================================
 
 I've made this hoping to grok Nock in the process.  As far as grokking
-Nock, the results are somewhat underwhelming so far, but I kind of
-like the evaluator, so here it is.
+Nock goes the jury is still out, but the evaluator turned out to be
+kind of cute.  So here it is.
 
 Other lispheads may or may not find this useful.
 
@@ -15,15 +15,16 @@ In case you are wondering what the hell am I on about:
 Syntax matters
 --------------
 
-The only exported way to create Nock terms is by their read syntaxes.
+The only exported way to create (and evaluate) Nock terms is by their
+read syntaxes.
 
-One of those aims to be indistinguashable from the syntax used by the
-spec.  I don't like it much (it takes over some characters that are
-important in Lisp), so there's also another variety.
+One of those sytnaxes aims to resemble the syntax used by the spec.  I
+don't like it much (it masks out several important symbols), so
+there's also another syntax that is friendlier to Lisp.
 
-So you can use `?[a b]` or `{? [a b]}`, depending on the readtable.
-The syntax is recursive, so you can use terms inside nouns -- they
-will be automagically evaluated.
+You can use `?[a b]` or `{? [a b]}`, depending on the active
+readtable.  The syntax is recursive, so you can put terms inside nouns
+and they will be automagically evaluated.
 
 As a side effect, the `[]` noun syntax is available on its own (though
 probably not very useful).  It expands into a call to `LIST*`.
@@ -37,12 +38,12 @@ Usage
 your lisp in the system's directory (or `,cd` into it in `Slime`.  You
 do use `Slime`, right?).
 
-1.5 If using ECL (for whatever reason) this helps: `(compile-file #p"nock.asd" :load t)`
+1.5. If using ECL (for whatever reason) this helps: `(compile-file #p"nock.asd" :load t)`
 
 2. `(ql:quickload "nock")`
 
 3. `(named-readtables:in-readtable nock:spec-readtable)`.  Sort of a
-mouthful, but only needed to be issued once at the beginning of the
+mouthful, but only needs to be issued once at the beginning of the
 session.`
 
 4. `/[7 [[4 5] [6 14 15]]] ;let's try this!`
