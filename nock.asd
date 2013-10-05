@@ -3,7 +3,7 @@
   :version "0.1"
   :author "Michael Livshin"
   :license "PD"
-  :depends-on (:optima)
+  :depends-on (:optima :named-readtables)
   :serial t
   :components ((:file "packages")
                (:file "globals")

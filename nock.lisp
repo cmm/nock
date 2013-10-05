@@ -1,4 +1,5 @@
 (in-package nock)
+(in-readtable impl)
 
 (defstruct nack
   "Out-of-band error representation."
@@ -55,7 +56,7 @@
 (defun nock-out (term)
   "The outer Nock evaluator.
 Sets things up according to the value of *TRACE-NOCK-P*, catches nacks."
-  (let ((*nock* (if *trace-nock-p*
+  (let ((*nock* (if *trace*
                     #'nock-in-traced
                     #'nock-in)))
     (catch 'nack

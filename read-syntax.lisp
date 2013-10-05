@@ -21,7 +21,7 @@ Also eval it right away, unless tracing."
                                 :annotation *annotation*)))
     (if *inner-nerm-read-context-p*
         `(nock ,make-form)
-        `(if *trace-nock-p*
+        `(if *trace*
              (nock ,make-form)
              ,make-form))))
 
@@ -31,13 +31,17 @@ Also eval it right away, unless tracing."
   (let ((args (read-delimited-list #\} stream t)))
     `(nerm :op ',(first args) :noun ,(second args))))
 
-;;; [] is the NELL syntax, like in the Nock spec
-(set-macro-character #\] (get-macro-character #\)))
-(set-macro-character #\[ #'nell-reader)
-
-;;; In the regular readtable, {} is the matching NERM syntax
-(set-macro-character #\} (get-macro-character #\)))
-(set-macro-character #\{ #'nerm-match-reader)
+(defun nerm-user-reader (stream char)
+  "Read and eval a NERM."
+  (declare (ignode char))
+  (let ((args (let ((*inner-nerm-read-context-p* t))
+                (read-delimited-list #\} stream t))))
+    (unless (= (length args) 2)
+      (error "invalid NERM syntax"))
+    (let ((make-form `(make-nerm :op ',(first args) :noun ,(second args))))
+      (if *inner-nerm-read-context-p*
+          `(nock ,make-form)
+          make-form))))
 
 (defun dollar-reader (stream char)
   "Activate *NOCK-EVAL-READTABLE* for the next one or two SEXPs.
@@ -45,15 +49,29 @@ If the first SEXP is an atom (unevaluated), it is taken to be the
 current *ANNOTATION* for the second SEXP's dynamic extent. Else we
 only read one SEXP."
   (declare (ignore char))
-  (let ((*readtable* *nock-eval-readtable*))
+  (let ((*readtable* (find-readtable 'eval)))
     (let ((first (read stream t nil t)))
       (if (consp first)
           first
           `(let ((*annotation* ',first))
              ,(read stream t nil t))))))
 
-(set-macro-character #\$ #'dollar-reader)
+(defreadtable base
+  (:merge :standard)
+  ;; [] is the NELL syntax, like in the Nock spec
+  (:macro-char #\[ #'nell-reader)
+  (:syntax-from :standard #\) #\])
+  (:syntax-from :standard #\) #\}))
 
-(setf *nock-eval-readtable* (copy-readtable))
-(set-macro-character #\{ #'nerm-eval-reader
-                     nil *nock-eval-readtable*)
+(defreadtable impl
+  (:merge base)
+  (:macro-char #\{ #'nerm-match-reader)
+  (:macro-char #\$ #'dollar-reader))
+
+(defreadtable eval
+  (:merge base)
+  (:macro-char #\{ #'nerm-eval-reader))
+
+(defreadtable user-readtable
+  (:merge base)
+  (:macro-char #\{ #'nerm-user-reader))
