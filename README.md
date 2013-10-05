@@ -43,7 +43,7 @@ do use `Slime`, right?).
 mouthful, but only needed to be issued once at the beginning of the
 session.`
 
-4. `(nock:nock /[7 [[4 5] [6 14 15]]]) ;let's try this!`
+4. `/[7 [[4 5] [6 14 15]]] ;let's try this!`
 ```
 {/ [7 [4 5] 6 14 15]}
  |16| {/ [3 [4 5] 6 14 15]}

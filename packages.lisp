@@ -7,6 +7,5 @@
                 #:find-readtable
                 #:in-readtable)
   (:export #:*trace*
-           #:nock
            #:spec-readtable
            #:lisp-friendly-readtable))
