@@ -84,6 +84,7 @@ Sets things up according to the value of *TRACE-NOCK-P*, catches nacks."
     (	{/ [1 a]}			$ 12			a					)
     (	{/ [2 a _]}			$ 13			a					)
     (	{/ [3 _ b]}			$ 14			b					)
+    (	{/ [a _]} when (consp a)						(nack term)		)
     (	{/ [a b]} when (oddp a)		$ 16	{/ [3 {/ [(ash a -1) b]}]}				)
     (	{/ [a b]} when (> a 0)		$ 15	{/ [2 {/ [(ash a -1) b]}]}				)
     (	{/ _}				$ 17					(nack term)		)
