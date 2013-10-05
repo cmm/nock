@@ -34,7 +34,8 @@ Usage
 0. Install `Quicklisp` if you haven't already.
 
 1. Put this system somewhere where `ASDF` can find it, or just start
-your lisp in the system's directory (or `,cd` into it in Slime).
+your lisp in the system's directory (or `,cd` into it in `Slime`.  You
+do use `Slime`, right?).
 
 2. `(asdf:oos 'asdf:load-op "nock")`
 
