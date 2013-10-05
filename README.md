@@ -37,6 +37,8 @@ Usage
 your lisp in the system's directory (or `,cd` into it in `Slime`.  You
 do use `Slime`, right?).
 
+1.5 If using ECL (for whatever reason) this helps: `(compile-file #p"nock.asd" :load t)`
+
 2. `(ql:quickload "nock")`
 
 3. `(named-readtables:in-readtable nock:spec-readtable)`.  Sort of a
