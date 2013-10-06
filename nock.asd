@@ -9,4 +9,5 @@
                (:file "globals")
                (:file "nerm")
                (:file "read-syntax")
-               (:file "nock")))
+               (:file "nock")
+               (:file "idioms")))

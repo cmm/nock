@@ -6,6 +6,7 @@
                 #:defreadtable
                 #:find-readtable
                 #:in-readtable)
-  (:export #:*trace*
+
+  (:export #:set-evaluation-mode
            #:spec-readtable
            #:lisp-friendly-readtable))

@@ -20,9 +20,9 @@ Also eval it right away, unless tracing."
                                 :annotation *annotation*)))
     (if *inner-nerm-read-context-p*
         `(nock ,make-form)
-        `(if *trace*
-             (nock ,make-form)
-             ,make-form))))
+        `(if *tail-recursive-p*
+             ,make-form
+             (nock ,make-form)))))
 
 (defun nerm-match-reader (stream char)
   "Read a NERM, or rather make a MATCH pattern that will match it."
@@ -47,16 +47,18 @@ Also eval it right away, unless tracing."
 
 (defun dollar-reader (stream char)
   "Activate the eval readtable for the next one or two SEXPs.
-If the first SEXP is an atom (unevaluated), it is taken to be the
-*ANNOTATION* for the second SEXP's dynamic extent. Else we only read
-one SEXP."
-  (declare (ignore char))
+The first SEXP is an atom (unevaluated), and is taken to be the
+*ANNOTATION* for the second SEXP's dynamic extent."
   (let ((*readtable* (find-readtable 'eval)))
-    (let ((first (read stream t nil t)))
-      (if (consp first)
-          first
-          `(let ((*annotation* ',first))
-             ,(read stream t nil t))))))
+    `(let ((*annotation* '()))
+       ,(dollar-eval-reader stream char))))
+
+(defun dollar-eval-reader (stream char)
+  "Read the second SEXP with the first added to the current *ANNOTATION*."
+  (declare (ignore char))
+  (let ((first (read stream t nil t)))
+    `(let ((*annotation* (cons ',first *annotation*)))
+       ,(read stream t nil t))))
 
 (defreadtable base
   (:merge :standard)
@@ -71,7 +73,8 @@ one SEXP."
 
 (defreadtable eval
   (:merge base)
-  (:macro-char #\{ #'nerm-eval-reader))
+  (:macro-char #\{ #'nerm-eval-reader)
+  (:macro-char #\$ #'dollar-eval-reader))
 
 (defreadtable lisp-friendly-readtable
   (:merge base)

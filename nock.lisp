@@ -22,27 +22,23 @@
     (make-nack :term term :annotation *annotation*)))
 
 (defvar *depth* 0)
-(defun nock-in-traced (term)
+(defun trace-boilerplate (term)
   ;; My FORMAT-fu sucks, sorry.
   (format *trace-output* "~&")
+  (when (and (nermp term))
+    (let ((ann (nerm-annotation term)))
+      (when ann
+        (format *trace-output* "~{~a~^:~}~6t" (reverse ann)))))
   (dotimes (i *depth*)
-    (format *trace-output* " "))
-  (when (and (nermp term) (nerm-annotation term))
-    (format *trace-output* "|~a| " (nerm-annotation term)))
-  (format *trace-output* "~a" term)
+    (format *trace-output* " ")))
 
-  (let ((result (if (nermp term)
-                    (let ((*depth* (1+ *depth*)))
-                      (nock-nock term))
-                    term)))
-    (format *trace-output* "~&")
-    (dotimes (i *depth*)
-      (format *trace-output* " "))
-    (when (and (nermp term) (nerm-annotation term))
-      (format *trace-output* "|~a| " (nerm-annotation term)))
-    (format *trace-output* "<- ~a" (if (consp result)
-                                       (nellify result)
-                                       result))
+(defun nock-in-traced (term)
+  (trace-boilerplate term)
+  (format *trace-output* "~a" term)
+  (let ((result (let ((*depth* (1+ *depth*)))
+                  (nock-in term))))
+    (trace-boilerplate term)
+    (format *trace-output* "<- ~a" (nellify result))
     result))
 
 (defun nock-in (term)
@@ -55,7 +51,7 @@
 (defun nock-out (term)
   "The outer Nock evaluator.
 Sets things up according to the value of *TRACE*, catches nacks."
-  (let ((*nock* (if *trace*
+  (let ((*nock* (if *tracedp*
                     #'nock-in-traced
                     #'nock-in)))
     (catch 'nack
@@ -84,18 +80,18 @@ Sets things up according to the value of *TRACE*, catches nacks."
     (	{/ [2 a _]}			$ 13			a					)
     (	{/ [3 _ b]}			$ 14			b					)
     (	{/ [a _]} when (consp a)						(nack term)		)
-    (	{/ [a b]} when (oddp a)		$ 16	{/ [3 {/ [(ash a -1) b]}]}				)
-    (	{/ [a b]} when (> a 0)		$ 15	{/ [2 {/ [(ash a -1) b]}]}				)
+    (	{/ [a b]} when (oddp a)		$ 16	{/ [3 $0{/ [(ash a -1) b]}]}				)
+    (	{/ [a b]} when (> a 0)		$ 15	{/ [2 $0{/ [(ash a -1) b]}]}				)
     (	{/ _}				$ 17					(nack term)		)
 
-    (	{* [a b c]} when (consp b)	$ 19	[{* [a b]} {* [a c]}]					)
+    (	{* [a b c]} when (consp b)	$ 19	[$1{* [a b]} $2{* [a c]}]				)
 
     (	{* [a 0 b]}			$ 21	{/ [b a]}						)
     (	{* [_ 1 b]}			$ 22			b					)
-    (	{* [a 2 b c]}			$ 23	{* [{* [a b]} {* [a c]}]}				)
-    (	{* [a 3 b]}			$ 24	{? {* [a b]}}						)
-    (	{* [a 4 b]}			$ 25	{+ {* [a b]}}						)
-    (	{* [a 5 b]}			$ 26	{= {* [a b]}}						)
+    (	{* [a 2 b c]}			$ 23	{* [$1{* [a b]} $2{* [a c]}]}				)
+    (	{* [a 3 b]}			$ 24	{? $0{* [a b]}}						)
+    (	{* [a 4 b]}			$ 25	{+ $0{* [a b]}}						)
+    (	{* [a 5 b]}			$ 26	{= $0{* [a b]}}						)
 
     (	{* [a 6 b c d]}			$ 28	{* [a 2 [0 1] 2 [1 c d] [1 0] 2 [1 2 3] [1 0] 4 4 b]}	)
     (	{* [a 7 b c]}			$ 29	{* [a 2 b 1 c]}						)
