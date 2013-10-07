@@ -79,7 +79,7 @@ The first SEXP is an atom (unevaluated), and is taken to be the
   (:macro-char #\{ #'nerm-user-reader))
 
 (defreadtable spec
-  (:merge lisp-friendly-readtable)
+  (:merge spel)
   (:macro-char #\* #'prefix-reader)
   (:macro-char #\? #'prefix-reader)
   (:macro-char #\+ #'prefix-reader)

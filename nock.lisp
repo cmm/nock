@@ -13,7 +13,7 @@
 
 (defmethod print-object ((nack nack) stream)
   (when (nack-annotation nack)
-    (format stream "|~a| " (nack-annotation nack)))
+    (format stream "~a  " (nack-annotation nack)))
   (format stream "FAIL: ~a" (nack-term nack)))
 
 (defun nack (term)
@@ -32,6 +32,8 @@
   (dotimes (i *depth*)
     (format *trace-output* " ")))
 
+(defvar *reductions*)
+
 (defun nock-in-traced (term)
   (trace-boilerplate term)
   (format *trace-output* "~a" term)
@@ -43,7 +45,12 @@
 
 (defun nock-in (term)
   ;; You say "loop", I say "tail recursion"
-  (loop :for current = term :then (nock-nock current)
+  (loop :for current = term :then (progn
+                                    (incf *reductions*)
+                                    (when (> *reductions* *max-reductions*)
+                                      (let ((*annotation* "got to *MAX-REDUCTIONS*, gave up"))
+                                        (nack current)))
+                                    (nock-nock current))
         :while (nermp current)
         :finally (return current)))
 
@@ -53,7 +60,8 @@
 Sets things up according to the value of *TRACE*, catches nacks."
   (let ((*nock* (if *tracedp*
                     #'nock-in-traced
-                    #'nock-in)))
+                    #'nock-in))
+        (*reductions* 0))
     (catch 'nack
       (funcall *nock* term))))
 (setf *nock* #'nock-out)

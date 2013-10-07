@@ -1,7 +1,7 @@
 ;;;; Ignore this
 
 (in-package nock)
-(in-readtable lisp-friendly-readtable)
+(in-readtable spel)
 
 (defmacro define-idiom (name (&rest args) magic-number)
   `(defun ,name (,@args)

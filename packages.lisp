@@ -9,5 +9,6 @@
                 #:in-readtable)
 
   (:export #:set-evaluation-mode
+           #:*max-reductions*
            #:spel
            #:spec))
