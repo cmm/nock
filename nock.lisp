@@ -13,7 +13,7 @@
 
 (defmethod print-object ((nack nack) stream)
   (when (nack-annotation nack)
-    (format stream "~a  " (nack-annotation nack)))
+    (format stream "~{~a~^:~}  " (nack-annotation nack)))
   (format stream "FAIL: ~a" (nack-term nack)))
 
 (defun nack (term)
@@ -48,7 +48,7 @@
   (loop :for current = term :then (progn
                                     (incf *reductions*)
                                     (when (> *reductions* *max-reductions*)
-                                      (let ((*annotation* "got to *MAX-REDUCTIONS*, gave up"))
+                                      (let ((*annotation* '("got to *MAX-REDUCTIONS*, gave up!")))
                                         (nack current)))
                                     (nock-nock current))
         :while (nermp current)
@@ -87,7 +87,8 @@ Sets things up according to the value of *TRACE*, catches nacks."
     (	{/ [1 a]}			$ 12			a					)
     (	{/ [2 a _]}			$ 13			a					)
     (	{/ [3 _ b]}			$ 14			b					)
-    (	{/ [a _]} when (consp a)						(nack term)		)
+    (	{/ [_ a]} unless (consp a)	$ foo!					(nack term)		)
+    (	{/ [a _]} when (consp a)	$ foo!					(nack term)		)
     (	{/ [a b]} when (oddp a)		$ 16	{/ [3 {/ [(ash a -1) b]}]}				)
     (	{/ [a b]} when (> a 0)		$ 15	{/ [2 {/ [(ash a -1) b]}]}				)
     (	{/ _}				$ 17					(nack term)		)
