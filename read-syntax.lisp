@@ -74,11 +74,11 @@ The first SEXP is an atom (unevaluated), and is taken to be the
   (:merge base)
   (:macro-char #\{ #'nerm-eval-reader))
 
-(defreadtable lisp-friendly-readtable
+(defreadtable spel
   (:merge base)
   (:macro-char #\{ #'nerm-user-reader))
 
-(defreadtable spec-readtable
+(defreadtable spec
   (:merge lisp-friendly-readtable)
   (:macro-char #\* #'prefix-reader)
   (:macro-char #\? #'prefix-reader)

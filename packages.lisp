@@ -5,8 +5,9 @@
   (:import-from :named-readtables
                 #:defreadtable
                 #:find-readtable
+                #:readtable-name
                 #:in-readtable)
 
   (:export #:set-evaluation-mode
-           #:spec-readtable
-           #:lisp-friendly-readtable))
+           #:spel
+           #:spec))

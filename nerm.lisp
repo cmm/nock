@@ -19,5 +19,7 @@
               (nellify (cdr noun) t))))
 
 (defmethod print-object ((nerm nerm) stream)
-  (format stream "{~a ~a}"
+  (format stream (if (eq (readtable-name *readtable*) 'spel)
+                     "{~a ~a}"
+                     "~a~a")
           (nerm-op nerm) (nellify (nerm-noun nerm))))

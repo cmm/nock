@@ -42,13 +42,11 @@ do use `Slime`, right?).
 
 2. `(ql:quickload "nock")`
 
-3. `(named-readtables:in-readtable nock:spec-readtable)`.  It's sort
-of a mouthful, but only needs to be issued once at the beginning of
-the session.
+3. `(named-readtables:in-readtable nock:spec)`.
 
 4. `/[7 [[4 5] [6 14 15]]] ;let's try this!`
 ```
-{/ [7 [4 5] 6 14 15]}
+/[7 [[4 5] [6 14 15]]]
 16:0   {/ [3 [4 5] 6 14 15]}
 16:0   <- [6 14 15]
 16     {/ [3 6 14 15]}
@@ -56,8 +54,8 @@ the session.
 <- [14 15]
 ```
 
-5. Or you could use `nock:lisp-friendly-readtable` instead, and write
-the above term as `{/ [7 [[4 5] [6 14 15]]]}`.
+5. Or you could use `nock:spel` instead, and write the above term as
+`{/ [7 [[4 5] [6 14 15]]]}`.
 
 6. Notice how the output above helpfully shows (on the left-hand side)
 every reduction that is performed, by spec rule number.  As you become
