@@ -66,6 +66,6 @@ nested reductions, try `(nock:set-evaluation-mode :tail-recursive t)`.
 Those knobs are orthogonal, but tail recursion does tend to make
 tracing less informative.
 
-7. The maximum number of reductions is artificially limited to 32.  I
-know, no need to thank me.  To raise the limit,
+7. The maximum number of reductions (when tracing) is artificially
+limited to 32.  I know, no need to thank me.  To raise the limit,
 `(setf nock:*max-reductions* <something-higher>)`.

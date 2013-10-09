@@ -3,28 +3,29 @@
 (in-package nock)
 (in-readtable spel)
 
-(defmacro define-idiom (name (&rest args) magic-number)
-  `(defun ,name (,@args)
-     [,magic-number ,@args]))
+(defmacro curry (f &rest args)
+  (flet ((form ()
+           `[,@(mapcar (lambda (x) `(%K ,x)) (cons f args)) (%I)]))
+    (if args
+        (form)
+        `(load-time-value ,(form) t))))
 
-(defmacro define-idiom-transformer (name (&rest args) magic-number)
-  `(defun ,name (,@args .tail.)
-     [,magic-number ,@args .tail.]))
+(defmacro define-idiom (name magic-number &rest args)
+  `(progn
+     (defun ,name (,@args)
+       [,magic-number ,@args])
+     (defun ,(intern (concatenate 'string (symbol-name name) "%") 'nock)
+         (,@(butlast args))
+       (curry ,magic-number ,@(butlast args)))))
 
-(define-idiom-transformer %hint (hint) 10)
+(define-idiom %hint 10 hint f)
 
-(define-idiom-transformer %compose (f) 7)
-(define-idiom-transformer %cell-compose (f) 8)
-(define-idiom-transformer %apply-core-formula (slot) 9)
+(define-idiom %compose 7 f g)
+(define-idiom %cell-compose 8 f g)
+(define-idiom %core-apply 9 slot f)
 
-(define-idiom %select-subtree (addr) 0)
-(defun %id ()
-  (load-time-value (%select-subtree 1) t))
+(define-idiom %subtree 0 idx)
 
-(define-idiom %const (value) 1)
-
-(define-idiom-transformer %cell? () 3)
-(define-idiom-transformer %inc () 4)
-(define-idiom-transformer %eq? () 5)
-
-(define-idiom %application (subject-maker op-maker) 2)
+(define-idiom %K 1 value)
+(define-idiom %S 2 a b)
+(defun %I () (load-time-value (%subtree 1) t))

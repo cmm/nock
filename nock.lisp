@@ -21,6 +21,10 @@
   (throw 'nack
     (make-nack :term term :annotation *annotation*)))
 
+(defun nope (term why)
+  (let ((*annotation* (list why)))
+    (nack term)))
+
 (defvar *depth* 0)
 (defun trace-boilerplate (term)
   ;; My FORMAT-fu sucks, sorry.
@@ -46,10 +50,10 @@
 (defun nock-in (term)
   ;; You say "loop", I say "tail recursion"
   (loop :for current = term :then (progn
-                                    (incf *reductions*)
-                                    (when (> *reductions* *max-reductions*)
-                                      (let ((*annotation* '("got to *MAX-REDUCTIONS*, gave up!")))
-                                        (nack current)))
+                                    (when *tracedp*
+                                      (incf *reductions*)
+                                      (when (> *reductions* *max-reductions*)
+                                        (nope current "got to *MAX-REDUCTIONS*, gave up!")))
                                     (nock-nock current))
         :while (nermp current)
         :finally (return current)))
