@@ -10,4 +10,4 @@
                (:file "nerm")
                (:file "read-syntax")
                (:file "nock")
-               (:file "idioms")))
+               (:file "symbolic-ops")))

@@ -38,7 +38,7 @@
 
 (defvar *reductions*)
 
-(defun nock-in-traced (term)
+(defun nock-in/traced (term)
   (trace-boilerplate term)
   (format *trace-output* "~a" term)
   (let ((result (let ((*depth* (1+ *depth*)))
@@ -53,7 +53,7 @@
                                     (when *tracedp*
                                       (incf *reductions*)
                                       (when (> *reductions* *max-reductions*)
-                                        (nope current "got to *MAX-REDUCTIONS*, gave up!")))
+                                        (nope current "got to *MAX-REDUCTIONS*, giving up!")))
                                     (nock-nock current))
         :while (nermp current)
         :finally (return current)))
@@ -62,9 +62,7 @@
 (defun nock-out (term)
   "The outer Nock evaluator.
 Sets things up according to the value of *TRACE*, catches nacks."
-  (let ((*nock* (if *tracedp*
-                    #'nock-in-traced
-                    #'nock-in))
+  (let ((*nock* (if *tracedp* #'nock-in/traced #'nock-in))
         (*reductions* 0))
     (catch 'nack
       (funcall *nock* term))))
