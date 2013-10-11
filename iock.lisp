@@ -1,3 +1,5 @@
+;;;; A naive rule-rewriting evaluator, good for learning.
+
 (in-package nock)
 (in-readtable impl)
 

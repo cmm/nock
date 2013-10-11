@@ -1,44 +1,67 @@
-;;;; Ignore this
-
 (in-package nock)
-(in-readtable spel)
+(in-readtable impl)
 
-(defmacro define-primitive (name magic-number &rest args)
-  `(defun ,name (,@args)
-     [,magic-number ,@args]))
+(defun boolify (value)
+  (if value 0 1))
 
-(define-primitive %hint 10 hint f)
+(defun tree-elt (idx tree)
+  (case idx
+    (1		tree)
+    (2		(car tree))
+    (3		(cdr tree))
+    (otherwise	(multiple-value-bind (quotent remainder)
+                    (floor idx 2)
+                  (tree-elt (+ 2 remainder) (tree-elt quotent tree))))))
 
-(define-primitive %cellp 3 f)
-(define-primitive %inc 4 f)
-(define-primitive %eq 5 f)
+(defun lock (term)
+  (let ((noun (nerm-noun term)))
+    (ecase (nerm-op term)
+      (*	(funcall (lock-formula (cdr noun)) (car noun)))
 
-(define-primitive %compose 7 f g)
-(define-primitive %cell-compose 8 f g)
-(define-primitive %core-apply 9 method-elt-idx core-maker)
+      (?	(boolify (consp noun)))
+      (+	(1+ noun))
+      (=	(boolify (equal (car noun) (cdr noun))))
+      (/	(tree-elt (car noun) (cdr noun))))))
 
-(defun %composify (f)
-  (%compose (%id) f))
-
-(define-primitive %elt 0 idx)
-
-(define-primitive %K 1 value)
-(define-primitive %S 2 a b)
-(defun %I () (load-time-value (%elt 1) t))
-
-(define-primitive %if 6 condition then else)
-
-(defun %dec (f)
-  "The decrementer example from the crash course.
-Except it takes a formula on the right, for symmetry with the
-primitives."
-  ;; is that more or less readable than the numeric form?  dunno.
-  (%compose
-   f
-   (%cell-compose
-    (%K 0)
-    (%cell-compose
-     (%K (%if (%eq [(%elt 7) (%inc (%elt 6))])
-              (%elt 6)
-              (%core-apply 2 [(%elt 2) (%inc (%elt 6)) (%elt 7)])))
-     (%core-apply 2 (%I))))))
+(defun lock-formula (noun)
+  (ematch noun
+    ([b c] when (consp b)	$ 19	(lambda (a)
+                                          (cons (funcall (lock-formula b) a)
+                                                (funcall (lock-formula c) a))))
+    ([0 b]			$ 21	(lambda (a)
+                                          (tree-elt b a)))
+    ([1 b]			$ 22	(constantly b))
+    ([2 b c]			$ 23	(lambda (a)
+                                          (let ((noun (cons (funcall (lock-formula b) a)
+                                                            (funcall (lock-formula c) a))))
+                                            (funcall (lock-formula (cdr noun)) (car noun)))))
+    ([3 b]			$ 24	(lambda (a)
+                                          (boolify (consp (funcall (lock-formula b) a)))))
+    ([4 b]			$ 25	(lambda (a)
+                                          (1+ (funcall (lock-formula b) a))))
+    ([5 b]			$ 26	(lambda (a)
+                                          (let ((noun (funcall (lock-formula b) a)))
+                                            (boolify (equal (car noun) (cdr noun))))))
+    ([6 b c d]			$ 28	(lambda (a)
+                                          (if (zerop (funcall (lock-formula b) a))
+                                              (funcall (lock-formula c) a)
+                                              (funcall (lock-formula d) a))))
+    ([7 b c]			$ 29	(lambda (a)
+                                          (funcall (lock-formula c)
+                                                   (funcall (lock-formula b) a))))
+    ([8 b c]			$ 30	(lambda (a)
+                                          (funcall (lock-formula c)
+                                                   (let ((product (funcall (lock-formula b) a)))
+                                                     [product a]))))
+    ([9 b c]			$ 31	(lambda (a)
+                                          (funcall (lambda (core)
+                                                     (funcall (lock-formula
+                                                               (tree-elt b core))
+                                                              core))
+                                                   (funcall (lock-formula c) a))))
+    ([10 [_ c] d]		$ 32	(lambda (a)
+                                          (funcall (lock-formula c) a)
+                                          (funcall (lock-formula d) a)))
+    ;; TODO jets
+    ([10 _ c]			$ 33	(lambda (a)
+                                          (funcall (lock-formula c) a)))))

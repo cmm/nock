@@ -7,10 +7,9 @@
   "The outer Nock evaluator.
 Sets things up according to the value of *TRACE*, catches nacks."
   (let ((*reductions* 0)
-        (*nock* (cond
-                  (*compiledp*	(lambda (term) (funcall (cock term))))
-                  (*tracedp*	#'nock-in/traced)
-                  (t		#'nock-in))))
+        (*nock* (case *evaluation-mode*
+                  (:lock	#'lock)
+                  (:nock	(if *tracedp* #'nock-in/traced #'nock-in)))))
     (catch 'nack
       (funcall *nock* term))))
 
