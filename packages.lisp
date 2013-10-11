@@ -11,4 +11,17 @@
   (:export #:set-evaluation-mode
            #:*max-reductions*
            #:spel
-           #:spec))
+           #:spec
+
+           ;; parenthesized primitives
+           #:%hint
+           #:%cellp
+           #:%eq
+           #:%inc
+           #:%compose
+           #:%cell-compose
+           #:%core-apply
+           #:%elt
+           #:%S #:%K #:%I
+           #:%if
+           #:%dec))

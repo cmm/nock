@@ -7,7 +7,9 @@
   :serial t
   :components ((:file "packages")
                (:file "globals")
-               (:file "nerm")
                (:file "read-syntax")
-               (:file "nock")
-               (:file "symbolic-ops")))
+               (:file "nerm")
+               (:file "nack")
+               (:file "symbolic-ops")
+               (:file "interpreter")
+               (:file "nock")))
