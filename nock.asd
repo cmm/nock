@@ -5,11 +5,12 @@
   :license "PD"
   :depends-on (:optima :named-readtables)
   :serial t
-  :components ((:file "packages")
-               (:file "globals")
-               (:file "read-syntax")
+  :components ((:file "pack")
+               (:file "rulz")
+               (:file "read")
                (:file "nerm")
                (:file "nack")
-               (:file "symbolic-ops")
-               (:file "interpreter")
+               (:file "lock")
+               (:file "iock")
+               (:file "cock")
                (:file "nock")))
