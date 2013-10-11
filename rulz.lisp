@@ -11,6 +11,7 @@
   "Determine evaluation mode."
   (unless (member mode '(:nock :lock))
     (error "Bad mode"))
+  (setf *evaluation-mode* mode)
   (when traced-specified-p
     (setf *tracedp* traced))
   (when tail-recursive-specified-p
