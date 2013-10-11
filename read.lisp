@@ -17,7 +17,8 @@ Also eval it right away, usually."
   (declare (ignore char))
   (let* ((args (let ((*inner-nerm-read-context-p* t))
                  (read-delimited-list #\} stream t)))
-         (make-form `(make-nerm :op ',(first args) :noun ,(second args)
+         (make-form `(make-nerm :op ',(intern (string (first args)) 'nock)
+                                :noun ,(second args)
                                 :annotation *annotation*)))
     (if *inner-nerm-read-context-p*
         `(let ((*annotation* (cons *sub-count* *annotation*)))
@@ -31,7 +32,7 @@ Also eval it right away, usually."
   "Read a NERM, or rather make a MATCH pattern that will match it."
   (declare (ignore char))
   (let ((args (read-delimited-list #\} stream t)))
-    `(nerm :op ',(first args) :noun ,(second args))))
+    `(nerm :op ',(intern (string (first args)) 'nock) :noun ,(second args))))
 
 (defun spel-reader (stream char)
   "Read and eval a NERM."
@@ -39,11 +40,12 @@ Also eval it right away, usually."
   (let ((args (read-delimited-list #\} stream t)))
     (unless (= (length args) 2)
       (error "invalid NERM syntax"))
-    `(nock (make-nerm :op ',(first args) :noun ,(second args)))))
+    `(nock (make-nerm :op ',(intern (string (first args)) 'nock)
+                      :noun ,(second args)))))
 
 (defun spec-reader (stream char)
   "Read and eval a NERM, spec style."
-  (let* ((op (find-symbol (make-string 1 :initial-element char) 'nock))
+  (let* ((op (intern (make-string 1 :initial-element char) 'nock))
          (noun (let ((*inner-nerm-read-context-p* t))
                  (read stream t nil t))))
     `(nock (make-nerm :op ',op :noun ,noun))))
