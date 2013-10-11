@@ -60,12 +60,16 @@ do use `Slime`, right?).
 6. Notice how the output above helpfully shows (on the left-hand side)
 every reduction that is performed, by spec rule number.  As you become
 a more confident nocker and the verbosity starts bothering you, just
-turn Nock tracing off by saying `(nock:set-evaluation-mode :traced
-nil)`.  And if you are worried of running out of stack due to too many
-nested reductions, try `(nock:set-evaluation-mode :tail-recursive t)`.
-Those knobs are orthogonal, but tail recursion does tend to make
-tracing less informative.
+turn Nock tracing off by saying `(nock:set-evaluation-mode :nock
+:traced nil)`.  And if you are worried of running out of stack due to
+too many nested reductions, try `(nock:set-evaluation-mode :nock
+:tail-recursive t)`.  Those knobs are orthogonal, but tail recursion
+does tend to make tracing less informative.
 
 7. The maximum number of reductions (when tracing) is artificially
 limited to 32.  I know, no need to thank me.  To raise the limit,
 `(setf nock:*max-reductions* <something-higher>)`.
+
+8. Also you may want to try the "compiler" (it's a naive lambda
+chainer at the moment, actually) by doing `(nock:set-evaluation-mode
+:lock)`.  There's no tracing.
