@@ -1,7 +1,8 @@
 (cl:defpackage :nock
   (:use :cl)
   (:import-from :optima
-                #:ematch)
+                #:ematch
+                #:place)
   (:import-from :named-readtables
                 #:defreadtable
                 #:find-readtable
