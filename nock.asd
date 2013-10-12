@@ -3,7 +3,7 @@
   :version "0.1"
   :author "Michael Livshin"
   :license "PD"
-  :depends-on (:optima :named-readtables)
+  :depends-on (:optima :named-readtables :alexandria)
   :serial t
   :components ((:file "pack")
                (:file "rulz")

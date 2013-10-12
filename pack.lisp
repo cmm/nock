@@ -8,6 +8,8 @@
                 #:find-readtable
                 #:readtable-name
                 #:in-readtable)
+  (:import-from :alexandria
+                #:named-lambda)
 
   (:export #:set-evaluation-mode
            #:*max-reductions*

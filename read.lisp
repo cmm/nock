@@ -57,9 +57,10 @@ the second SEXP's dynamic extent."
   (declare (ignore char))
   (let ((*readtable* (find-readtable 'eval)))
     (let ((first (read stream t nil t)))
-      `(let ((*annotation* (list ',first))
-             (*sub-count* 0))
-         ,(read stream t nil t)))))
+      `(macrolet ((annotation () '(,first)))
+         (let ((*annotation* '(,first))
+               (*sub-count* 0))
+           ,(read stream t nil t))))))
 
 (defreadtable base
   (:merge :standard)
