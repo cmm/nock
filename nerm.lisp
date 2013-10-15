@@ -1,9 +1,9 @@
 (in-package nock)
 
 (defstruct (nerm (:predicate nermp))
-  "A NERM is a Nock tERM"
+  "Nock tERM"
   (op (error "missing op") :read-only t :type symbol)
-  (noun (error "missing noun") :read-only t :type (or cons (integer 0)))
+  (noun (error "missing noun") :read-only t :type noun)
   (annotation nil :read-only t))
 
 (defmethod make-load-form ((nerm nerm) &optional environment)
@@ -12,11 +12,12 @@
               :annotation ',(nerm-annotation nerm)))
 
 (defun nellify (noun &optional innerp)
-  (if (atom noun)
-      noun
-      (format nil (if innerp "~a ~a" "[~a ~a]")
-              (nellify (car noun))
-              (nellify (cdr noun) t))))
+  (typecase noun
+    (wormula	(nellify (wormula-original noun) innerp))
+    (cons	(format nil (if innerp "~a ~a" "[~a ~a]")
+                        (nellify (car noun))
+                        (nellify (cdr noun) t)))
+    (t		noun)))
 
 (defmethod print-object ((nerm nerm) stream)
   (format stream (if (eq (readtable-name *readtable*) 'spel)

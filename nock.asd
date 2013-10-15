@@ -7,6 +7,7 @@
   :serial t
   :components ((:file "pack")
                (:file "rulz")
+               (:file "type")
                (:file "read")
                (:file "nerm")
                (:file "nack")

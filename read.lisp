@@ -4,14 +4,28 @@
 (defvar *sub-count*)
 (defvar *inner-nerm-read-context-p* nil)
 
-(defun nell-reader (stream char)
-  "A NELL is a Nock cELL.  We represent them as CONSes, because Lisp."
-  (declare (ignore char))
-  (let* ((*inner-nerm-read-context-p* t)
-         (list (read-delimited-list #\] stream t)))
-    `(list* ,@list)))
+(defun honsify (list constructor)
+  (labels ((rec (list)
+             (cond
+               ((cdr list)
+                `(,constructor ,(car list) ,(rec (cdr list))))
+               (t
+                (car list)))))
+    (when list
+      (rec list))))
 
-(defun eval-reader (stream char)
+(defun read-nell (stream char constructor)
+  (declare (ignore char))
+  (let ((*inner-nerm-read-context-p* t))
+    (honsify (read-delimited-list #\] stream t) constructor)))
+
+(defun nell-match-reader (stream char)
+  (read-nell stream char 'cons))
+
+(defun nell-eval-reader (stream char)
+  (read-nell stream char 'hons))
+
+(defun nerm-eval-reader (stream char)
   "Read a NERM.
 Also eval it right away, usually."
   (declare (ignore char))
@@ -28,7 +42,7 @@ Also eval it right away, usually."
              ,make-form
              (nock ,make-form)))))
 
-(defun match-reader (stream char)
+(defun nerm-match-reader (stream char)
   "Read a NERM, or rather make a MATCH pattern that will match it."
   (declare (ignore char))
   (let ((args (read-delimited-list #\} stream t)))
@@ -64,21 +78,25 @@ the second SEXP's dynamic extent."
 
 (defreadtable base
   (:merge :standard)
-  (:macro-char #\[ #'nell-reader)
   (:syntax-from :standard #\) #\])
   (:syntax-from :standard #\) #\}))
 
 (defreadtable impl
   (:merge base)
-  (:macro-char #\{ #'match-reader)
+  (:macro-char #\[ #'nell-match-reader)
+  (:macro-char #\{ #'nerm-match-reader)
   (:macro-char #\$ #'dollar-reader))
 
-(defreadtable eval
+(defreadtable eval-base
   (:merge base)
-  (:macro-char #\{ #'eval-reader))
+  (:macro-char #\[ #'nell-eval-reader)
+  (:macro-char #\{ #'nerm-eval-reader))
+
+(defreadtable eval
+  (:merge eval-base))
 
 (defreadtable spel
-  (:merge base)
+  (:merge eval-base)
   (:macro-char #\{ #'spel-reader))
 
 (defreadtable spec
