@@ -4,7 +4,7 @@
 (defvar *sub-count*)
 (defvar *inner-nerm-read-context-p* nil)
 
-(defun honsify (list constructor)
+(defun consify (list constructor)
   (labels ((rec (list)
              (cond
                ((cdr list)
@@ -17,13 +17,13 @@
 (defun read-nell (stream char constructor)
   (declare (ignore char))
   (let ((*inner-nerm-read-context-p* t))
-    (honsify (read-delimited-list #\] stream t) constructor)))
+    (consify (read-delimited-list #\] stream t) constructor)))
 
 (defun nell-match-reader (stream char)
   (read-nell stream char 'cons))
 
 (defun nell-eval-reader (stream char)
-  (read-nell stream char 'hons))
+  (read-nell stream char 'cons))
 
 (defun nerm-eval-reader (stream char)
   "Read a NERM.

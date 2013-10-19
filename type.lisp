@@ -39,9 +39,3 @@ NIL is identity because checking for it it cheaper than funcalling
     (typecase thing
       (wormula	(wormula-original thing))
       (t	thing))))
-
-(declaim (inline hons))
-(defun hons (car cdr)
-  "Just CL:CONS for now.
-May become a hash-cons when I figure out a nice way to implement it."
-  (cons car cdr))

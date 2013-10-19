@@ -99,7 +99,7 @@
            (type cons noun))
   (ematch noun
     ([b c] when (consp b)	$ 19	(mbda (a) (b c)
-                                          (hons (call b a) (call c a))))
+                                          (cons (call b a) (call c a))))
 
     ([0 b]			$ 21	(progn
                                           (check-type b nondex)
@@ -122,9 +122,11 @@
                                             (check-type noun cons)
                                             (noolify (equal (carn noun) (cdr noun))))))
     ([6 b c d]			$ 28	(mbda (a) (b c d)
-                                          (if (zerop (the noolean (call b a)))
-                                              (call c a)
-                                              (call d a))))
+                                          (let ((cond (call b a)))
+                                            (check-type cond noolean)
+                                            (if (zerop cond)
+                                                (call c a)
+                                                (call d a)))))
 
     ([7 b c]			$ 29	(mbda (a) (b c)
                                           (call c (call b a))))

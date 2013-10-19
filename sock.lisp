@@ -3,7 +3,7 @@
 
 (defmacro define-primitive (name magic-number &rest args)
   `(defun ,name (,@args)
-     ,(honsify (cons magic-number args) 'hons)))
+     ,(consify (cons magic-number args) 'cons)))
 
 (define-primitive %hint 10 hint f)
 
