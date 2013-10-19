@@ -90,16 +90,42 @@
              (eqn (cdr b) (cdr c))))))
 
 (defmacro mbda ((arg) (&rest sub-formulae) &body body &environment env)
-  `(locally
-       (declare (optimize (debug 0) (safety 0) (speed 3)))
-     (let (,@(loop :for name :in sub-formulae
-                   :collect `(,name (lockf-formula ,name))))
-       (named-lambda ,(let ((annotation (macroexpand-1 '(annotation) env)))
-                        (intern (format nil "RULE-~{~a~^:~}" (reverse annotation))
-                                'nock))
-           (,arg)
-         (declare (type noun ,arg))
-         ,@body))))
+  (let ((mbda-name (let ((annotation (macroexpand-1 '(annotation) env)))
+                     (intern (format nil "RULE-~{~a~^:~}" (reverse annotation))
+                             'nock))))
+    (labels ((bda (body)
+               `(locally
+                    (declare (optimize (debug 0) (safety 0) (speed 3)))
+                  (named-lambda ,mbda-name (,arg)
+                    (declare (type noun ,arg))
+                    ,@body)))
+             (all-subsets (names)
+               (when names
+                 (let* ((tail-subsets (all-subsets (cdr names)))
+                        (tail-subsets (or tail-subsets (list tail-subsets))))
+                   (append tail-subsets
+                           (mapcar (lambda (s)
+                                     (cons (car names) s))
+                                   tail-subsets)))))
+             (uncall (ids body)
+               (labels ((rec (body)
+                          (ematch body
+                            (a when (atom a) a)
+                            ((list 'call f rest) when (member f ids)
+                             (rec rest))
+                            ((cons car cdr)
+                             (cons (rec car) (rec cdr))))))
+                 (rec body)))
+             (sans-id (names)
+               `((and ,@(loop :for name :in names
+                              :collect `(eqn ,name (%I))))
+                 ,(bda (uncall names body)))))
+  `(let (,@(loop :for name :in sub-formulae
+                 :collect `(,name (lockf-formula ,name))))
+     (cond
+       ,@(loop :for names :in (sort (all-subsets sub-formulae)
+                                    (lambda (a b) (> (length a) (length b))))
+               :collect (sans-id names)))))))
 
 (declaim (ftype (function (cons) formula) lockf-formula))
 (defun lock-formula (noun)
