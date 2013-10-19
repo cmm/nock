@@ -12,25 +12,30 @@
                   (generate-tree-access (+ 2 remainder)
                                         (generate-tree-access quotent arg))))))
 
-(defparameter +shallow-tree-accessors+
-  (coerce (loop :for i :from 2 :below +inline-tree-accessor-max+
-                :collect (funcall
-                          (compile
-                           nil
-                           (let ((name (intern (format nil "/~d" i) 'nock)))
-                             `(lambda ()
-                                (declare (optimize (debug 0) (safety 0) (speed 3)))
-                                (named-lambda ,name (.noun.)
-                                  (declare (type noun .noun.))
-                                  ,(generate-tree-access i '.noun.)))))))
-          'vector))
+(defun compile* (form)
+  (funcall (compile nil `(lambda () ,form))))
 
-(declaim (ftype (function (nondex) (values formula)) tree-accessor))
+(defparameter +shallow-tree-accessors+
+  (let ((i 2)
+        (res (make-array (list +inline-tree-accessor-max+))))
+    (map-into res
+              (lambda ()
+                (prog1
+                    (let ((name (intern (format nil "/~d" i) 'nock)))
+                      (compile*
+                       `(locally
+                            (declare (optimize (debug 0) (safety 0) (speed 3)))
+                          (named-lambda ,name (.noun.)
+                            (declare (type noun .noun.))
+                            ,(generate-tree-access i '.noun.)))))
+                  (incf i))))))
+
+(declaim (ftype (function (nondex) formula) tree-accessor))
 (defun tree-accessor (idx)
   (cond
     ((= idx 1)
      nil)
-    ((< idx +inline-tree-accessor-max+)
+    ((<= (1+ idx) +inline-tree-accessor-max+)
      (the formula-function (elt +shallow-tree-accessors+ (- idx 2))))
     (t
      (locally
@@ -88,7 +93,7 @@
          (declare (type noun ,arg))
          ,@body))))
 
-(declaim (ftype (function (cons) (values formula)) lock-formula))
+(declaim (ftype (function (cons) formula) lockf-formula))
 (defun lock-formula (noun)
   (declare (optimize (debug 3) (safety 3) (speed 1))
            (type cons noun))
