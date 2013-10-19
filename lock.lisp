@@ -99,15 +99,18 @@
                   (named-lambda ,mbda-name (,arg)
                     (declare (type noun ,arg))
                     ,@body)))
-             (all-subsets (names)
-               (when names
-                 (let* ((tail-subsets (all-subsets (cdr names)))
+             (all-subsets (list)
+               (when list
+                 (let* ((tail-subsets (all-subsets (cdr list)))
                         (tail-subsets (or tail-subsets (list tail-subsets))))
                    (append tail-subsets
                            (mapcar (lambda (s)
-                                     (cons (car names) s))
+                                     (cons (car list) s))
                                    tail-subsets)))))
              (uncall (ids body)
+               ;; a very crude code walker -- if the body uses CALL
+               ;; other than as an actual function call, bad things
+               ;; will happen
                (labels ((rec (body)
                           (ematch body
                             (a when (atom a) a)

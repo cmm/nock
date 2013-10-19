@@ -8,10 +8,9 @@
 (defun trace-boilerplate (term)
   ;; My FORMAT-fu sucks, sorry.
   (format *trace-output* "~&")
-  (when (and (nermp term))
-    (let ((ann (nerm-annotation term)))
-      (when ann
-        (format *trace-output* "~{~a~^:~}~6t" (reverse ann)))))
+  (when (nermp term)
+    (when-let (ann (nerm-annotation term))
+      (format *trace-output* "~{~a~^:~}~6t" (reverse ann))))
   (dotimes (i *depth*)
     (format *trace-output* " ")))
 

@@ -9,6 +9,7 @@
                 #:readtable-name
                 #:in-readtable)
   (:import-from :alexandria
+                #:when-let
                 #:named-lambda)
 
   (:export #:set-evaluation-mode

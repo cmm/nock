@@ -12,7 +12,7 @@
   '(integer 1))
 
 (deftype formula-function ()
-  '(function (noun) (values noun)))
+  '(function (noun) noun))
 
 (deftype formula ()
   "Nock formula, or Hoon gate: gets a noun, returns a noun.
