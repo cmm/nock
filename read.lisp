@@ -4,26 +4,10 @@
 (defvar *sub-count*)
 (defvar *inner-nerm-read-context-p* nil)
 
-(defun consify (list constructor)
-  (labels ((rec (list)
-             (cond
-               ((cdr list)
-                `(,constructor ,(car list) ,(rec (cdr list))))
-               (t
-                (car list)))))
-    (when list
-      (rec list))))
-
-(defun read-nell (stream char constructor)
+(defun nell-reader (stream char)
   (declare (ignore char))
   (let ((*inner-nerm-read-context-p* t))
-    (consify (read-delimited-list #\] stream t) constructor)))
-
-(defun nell-match-reader (stream char)
-  (read-nell stream char 'cons))
-
-(defun nell-eval-reader (stream char)
-  (read-nell stream char 'cons))
+    `(list* ,@(read-delimited-list #\] stream t))))
 
 (defun nerm-eval-reader (stream char)
   "Read a NERM.
@@ -78,18 +62,17 @@ the second SEXP's dynamic extent."
 
 (defreadtable base
   (:merge :standard)
+  (:macro-char #\[ #'nell-reader)
   (:syntax-from :standard #\) #\])
   (:syntax-from :standard #\) #\}))
 
 (defreadtable impl
   (:merge base)
-  (:macro-char #\[ #'nell-match-reader)
   (:macro-char #\{ #'nerm-match-reader)
   (:macro-char #\$ #'dollar-reader))
 
 (defreadtable eval-base
   (:merge base)
-  (:macro-char #\[ #'nell-eval-reader)
   (:macro-char #\{ #'nerm-eval-reader))
 
 (defreadtable eval
