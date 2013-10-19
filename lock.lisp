@@ -81,6 +81,14 @@
                           (make-wormula :original (car noun)
                                         :formula formula)))))))
 
+(locally
+    (declare (optimize (debug 0) (safety 0) (speed 3)))
+  (defun eqn (b c)
+    (or (eql b c)
+        (and (consp b) (consp c)
+             (eqn (carn b) (carn c))
+             (eqn (cdr b) (cdr c))))))
+
 (defmacro mbda ((arg) (&rest sub-formulae) &body body &environment env)
   `(locally
        (declare (optimize (debug 0) (safety 0) (speed 3)))
@@ -120,7 +128,7 @@
     ([5 b]			$ 26	(mbda (a) (b)
                                           (let ((noun (call b a)))
                                             (check-type noun cons)
-                                            (noolify (equal (carn noun) (cdr noun))))))
+                                            (noolify (eqn (carn noun) (cdr noun))))))
     ([6 b c d]			$ 28	(mbda (a) (b c d)
                                           (let ((cond (call b a)))
                                             (check-type cond noolean)

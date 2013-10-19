@@ -23,17 +23,13 @@
 
 (define-primitive %if 6 condition then else)
 
-(defun %dec (f)
-  "The decrementer example from the crash course.
-Except it takes a formula on the right, for symmetry with the
-primitives."
+(defun %dec ()
+  "The decrementer example from the crash course."
   ;; is that more or less readable than the numeric form?  dunno.
-  (%compose
-   f
+  (%cell-compose
+   (%K 0)
    (%cell-compose
-    (%K 0)
-    (%cell-compose
-     (%K (%if (%eq [(%elt 7) (%inc (%elt 6))])
-              (%elt 6)
-              (%core-apply 2 [(%elt 2) (%inc (%elt 6)) (%elt 7)])))
-     (%core-apply 2 (%I))))))
+    (%K (%if (%eq [(%elt 7) (%inc (%elt 6))])
+             (%elt 6)
+             (%core-apply 2 [(%elt 2) (%inc (%elt 6)) (%elt 7)])))
+    (%core-apply 2 (%I)))))
