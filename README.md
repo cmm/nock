@@ -27,18 +27,15 @@ depending on the active readtable.  The syntax is recursive, so you
 can put terms inside nouns and they will be automagically evaluated.
 
 As a side effect, the `[]` noun syntax is available on its own (though
-probably not very useful, `[a b]` simply expands into `(LIST* a b`).
+probably not very useful: `[a b]` simply expands into `(LIST* a b`).
 
 Usage
 -----
 
 0. Install `Quicklisp`, if you haven't already.
 
-1. Put this system somewhere where `ASDF` can find it, or just start
-your lisp in the system's directory (or `,cd` into it in `Slime`.  You
-do use `Slime`, right?).
-
-1.5. If using ECL (for whatever reason), this helps: `(compile-file #p"nock.asd" :load t)`
+1. Put this system somewhere where `ASDF` can find it (or push its
+directory to `ASDF:*CENTRAL-REGISTRY*`).
 
 2. `(ql:quickload "nock")`
 
@@ -72,5 +69,5 @@ limited to 32.  I know, no need to thank me.  To raise the limit,
 
 8. Also you may want to try the compiler by doing
 `(nock:set-evaluation-mode :lock)`.  It relies on the underlying CL
-compiler for tail recursion optimization (SBCL's good for it, perhaps
-some others are too).  There's no tracing and probably some bugs.
+compiler for tail recursion optimization (at least SBCL, CCL & ECL do
+it, last time I checked).  There's no tracing and probably some bugs.
