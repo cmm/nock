@@ -39,3 +39,17 @@ NIL is identity because checking for it it cheaper than funcalling
     (typecase thing
       (wormula	(wormula-original thing))
       (t	thing))))
+
+(locally
+    (declare #.*optimize-speed*)
+  (defun eqn (b c)
+    (or (eql b c)
+        (and (consp b) (consp c)
+             (eqn (carn b) (carn c))
+             (eqn (cdr b) (cdr c))))))
+
+(defun deworm (noun)
+  (etypecase noun
+    (cons	(cons (deworm (car noun)) (deworm (cdr noun))))
+    (notom	noun)
+    (wormula	(deworm (wormula-original noun)))))

@@ -17,7 +17,7 @@
 
 (defmacro define-shallow-accessors ()
   `(locally
-       (declare (optimize (debug 0) (safety 0) (speed 3)))
+       (declare ,*optimize-speed*)
      ,@(loop :for i :from 0 :below +inline-tree-accessor-max+
              :collecting
              (let* ((idx (+ i 2))
@@ -32,7 +32,7 @@
   
 (defun deep-tree-accessor (idx)
   (locally
-      (declare (optimize (debug 0) (safety 0) (speed 3))
+      (declare #.*optimize-speed*
                (type nondex idx))
     (labels ((tree-elt (idx tree)
                (cond
@@ -94,14 +94,6 @@
                           (make-wormula :original (car noun)
                                         :formula formula)))))))
 
-(locally
-    (declare (optimize (debug 0) (safety 0) (speed 3)))
-  (defun eqn (b c)
-    (or (eql b c)
-        (and (consp b) (consp c)
-             (eqn (carn b) (carn c))
-             (eqn (cdr b) (cdr c))))))
-
 (defun compile* (form)
   (funcall (compile nil `(lambda () ,form))))
 
@@ -117,15 +109,9 @@
       (cons
        (compile*
         `(locally
-             (declare (optimize (debug 0) (safety 0) (speed 3)))
+             (declare ,*optimize-speed*)
            (lambda (a)
              ,code)))))))
-
-(defun deworm (noun)
-  (etypecase noun
-    (cons	(cons (deworm (car noun)) (deworm (cdr noun))))
-    (notom	noun)
-    (wormula	(deworm (wormula-original noun)))))
 
 (defun lock-call (noun arg)
   (let ((code (lock-match (deworm noun) arg)))

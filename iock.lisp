@@ -41,12 +41,12 @@
   ;; This is supposed to be close in readability to the Nock spec.
   ;; The annotation numbers after the dollar signs are the spec rule
   ;; numbers.
-  (ematch term
+  (ematch (make-nerm :op (nerm-op term) :noun (deworm (nerm-noun term)) :annotation (nerm-annotation term))
     (	{? a} when (consp a)		$  4			0					)
     (	{? _}				$  5			1					)
     (	{+ a} when (atom a)		$  7			(1+ a)					)
     (	{+ _}				$  6					(nack term)		)
-    (	{= [a b]} when (equal a b)	$  8			0					)
+    (	{= [a b]} when (eqn a b)	$  8			0					)
     (	{= a} when (consp a)		$  9			1					)
     (	{= _}				$ 10					(nack term)		)
 
