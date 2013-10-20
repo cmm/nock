@@ -13,8 +13,9 @@
            (name (format nil "/~d" idx))
            (symbol (find-symbol name nock-package)))
       (or symbol
-          (and createp (intern name nock-package))
-          (error "no inline accessor for idx ~d" idx)))))
+          (if createp
+              (intern name nock-package)
+              (error "no inline accessor for idx ~d" idx))))))
 
 (defmacro define-inline-accessors ()
   (labels ((generate-tree-access (idx arg)
@@ -110,8 +111,8 @@
   (let ((code (lock-match (deworm noun) arg)))
     (etypecase code
       (null		arg)
-      (function		`(funcall ,code ,arg))
-      (symbol		`(,code ,arg))
+      (function		`(funcall (the formula ,code) (the noun ,arg)))
+      (symbol		`(,code (the noun ,arg)))
       ((or notom cons)	code))))
 
 (defun lock-match (noun arg)
@@ -127,7 +128,7 @@
 
     ([2 b c]			$ 23	`(funcall (the formula
                                                        (lockf-formula ,(lock-call c arg)))
-                                                  ,(lock-call b arg)))
+                                                  (the noun ,(lock-call b arg))))
 
     ([3 b]			$ 24	`(noolify (consp ,(lock-call b arg))))
     ([4 b]			$ 25	`(let ((notom ,(lock-call b arg)))
@@ -149,7 +150,7 @@
     ([9 b c]			$ 31	`(funcall (lambda (core)
                                                     (funcall (the formula
                                                                   (lockf-formula ,(lock-call [0 b] 'core)))
-                                                             core))
+                                                             (the noun core)))
                                                   ,(lock-call c arg)))
 
     ([10 [_ c] d]		$ 32	`(progn
