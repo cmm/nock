@@ -1,4 +1,4 @@
-;;;; A naive rule-rewriting evaluator, good for learning.
+;;;; A naive term-rewriting evaluator, good for learning.
 
 (in-package nock)
 (in-readtable impl)
@@ -14,34 +14,35 @@
   (dotimes (i *depth*)
     (format *trace-output* " ")))
 
-(defvar *reductions*)
-
 (defun nock-in/traced (term)
   (trace-boilerplate term)
   (format *trace-output* "~a" term)
   (let ((result (let ((*depth* (1+ *depth*)))
                   (nock-in term))))
     (trace-boilerplate term)
-    (format *trace-output* "<- ~a" (nellify result))
+    (format *trace-output* "<- ~a" (nell-string result))
     result))
+
+(defvar *reduction-counter*)
 
 (defun nock-in (term)
   ;; You say "loop", I say "tail recursion"
-  (loop :for current = term :then (progn
-                                    (when *tracedp*
-                                      (incf *reductions*)
-                                      (when (> *reductions* *max-reductions*)
-                                        (nope current "got to *MAX-REDUCTIONS*, giving up!")))
-                                    (nock-nock current))
+  (loop :for current = term
+          :then (progn
+                  (when (and *tracedp*
+                             (> (incf *reduction-counter*) *max-reductions*))
+                    (nope current "got to *MAX-REDUCTIONS*, giving up!"))
+                  (nock-nock current))
         :while (nermp current)
         :finally (return current)))
 
 (defun nock-nock (term)
   "Perform one Nock reduction or fail."
-  ;; This is supposed to be close in readability to the Nock spec.
-  ;; The annotation numbers after the dollar signs are the spec rule
-  ;; numbers.
-  (ematch (make-nerm :op (nerm-op term) :noun (deworm (nerm-noun term)) :annotation (nerm-annotation term))
+  (ematch (make-nerm :op (nerm-op term)
+                     :noun (deworm (nerm-noun term))
+                     :annotation (nerm-annotation term))
+  ;; The following is supposed to be close in readability to the Nock
+  ;; spec.  Those numbers after the dollar signs are the spec rules.
     (	{? a} when (consp a)		$  4			0					)
     (	{? _}				$  5			1					)
     (	{+ a} when (atom a)		$  7			(1+ a)					)

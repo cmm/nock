@@ -11,16 +11,15 @@
   `(make-nerm :op ',(nerm-op nerm) :noun ',(nerm-noun nerm)
               :annotation ',(nerm-annotation nerm)))
 
-(defun nellify (noun &optional innerp)
+(defun nell-string (noun &optional innerp)
   (typecase noun
-    (wormula	(nellify (wormula-original noun) innerp))
     (cons	(format nil (if innerp "~a ~a" "[~a ~a]")
-                        (nellify (car noun))
-                        (nellify (cdr noun) t)))
+                        (nell-string (car noun))
+                        (nell-string (cdr noun) t)))
     (t		noun)))
 
 (defmethod print-object ((nerm nerm) stream)
   (format stream (if (eq (readtable-name *readtable*) 'spel)
                      "{~a ~a}"
                      "~a~a")
-          (nerm-op nerm) (nellify (nerm-noun nerm))))
+          (nerm-op nerm) (nell-string (deworm (nerm-noun nerm)))))

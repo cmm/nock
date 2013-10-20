@@ -30,6 +30,10 @@
 
 (declaim (inline carn))
 (defun carn (noun)
+  "CAR of Noun.
+Compiled formulae are cached by way of replacing the respective noun's
+car with a wormula.  But we still need the ability to treat the noun
+as noun."
   (let ((thing (car noun)))
     (typecase thing
       (wormula	(wormula-original thing))
@@ -38,6 +42,8 @@
 (locally
     (declare #.*optimize-speed*)
   (defun eqn (b c)
+    "Equality predicate for nouns.
+We cannot just use EQUAL, because of wormulae."
     (or (eql b c)
         (and (consp b) (consp c)
              (eqn (carn b) (carn c))

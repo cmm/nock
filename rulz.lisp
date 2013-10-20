@@ -6,7 +6,6 @@
 Precludes long boring traces before the inevitable failure.")
 (defvar *tail-recursive-p* nil)
 (defvar *evaluation-mode* :nock)
-(defvar *optimize-speed* '(optimize (debug 0) (safety 0) (speed 3)))
 
 (defun set-evaluation-mode (mode &key (traced nil traced-p)
                                       (tail-recursive nil tail-recursive-p))
@@ -18,3 +17,7 @@ Precludes long boring traces before the inevitable failure.")
     (setf *tracedp* traced))
   (when tail-recursive-p
     (setf *tail-recursive-p* tail-recursive)))
+
+(defvar *optimize-speed* '(optimize (debug 0) (safety 0) (speed 3)))
+(defvar *annotation* nil)
+(defvar *sub-count*)

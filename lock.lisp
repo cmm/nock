@@ -1,9 +1,11 @@
 (in-package nock)
 (in-readtable impl)
 
-(defconstant +inline-tree-accessors-num+ 256)
+(defconstant +inline-tree-accessors-num+ 256
+  "How many tree accessor formulae to precompute.")
 (defconstant +inline-tree-idx-max+
-  (+ +inline-tree-accessors-num+ 2))
+  (+ +inline-tree-accessors-num+ 2)
+  "One above the largest tree index with a precomputed accessor.")
 (defparameter +inline-tree-accessors+
   (make-array `(,+inline-tree-accessors-num+)))
 
@@ -43,6 +45,7 @@
 (define-inline-accessors)
 
 (defun deep-tree-accessor (idx)
+  "Make tree accessor formula for a large index."
   (locally
       (declare #.*optimize-speed*
                (type nondex idx))
@@ -59,43 +62,27 @@
         (tree-elt idx tree)))))
 
 (defun tree-accessor (idx)
+  "Proper tree accessor formula for IDX."
   (check-type idx nondex)
   (cond
     ((= idx 1)				#'identity)
     ((< idx +inline-tree-idx-max+)	(elt +inline-tree-accessors+ (- idx 2)))
     (t					(deep-tree-accessor idx))))
 
-(defun tree-accessor-symbol (idx)
+(defun tree-accessor-designator (idx)
+  "Tree accessor designator for IDX."
   (check-type idx nondex)
   (cond
     ((= idx 1)				nil)
     ((< idx +inline-tree-idx-max+)	(tree-accessor-name idx nil))
     (t					(deep-tree-accessor idx))))
 
-(defun lock (term)
-  "The compiling Nock evaluator."
-  (let ((noun (nerm-noun term)))
-    (ecase (nerm-op term)
-      (*	(funcall (lockf-formula (cdr noun)) (car noun)))
-
-      (?	(noolify (consp noun)))
-      (+	(1+ noun))
-      (=	(noolify (equal (carn noun) (cdr noun))))
-      (/	(funcall (tree-accessor (carn noun)) (cdr noun))))))
-
-(defun lockf-formula (noun)
-  (typecase (car noun)
-    (wormula	(wormula-formula (car noun)))
-    (t		(let ((formula (lock-formula noun)))
-                  (prog1 formula
-                    (setf (car noun)
-                          (make-wormula :original (car noun)
-                                        :formula formula)))))))
-
 (defun compile* (form)
+  "COMPILE any old form, not just a function name."
   (funcall (compile nil `(lambda () ,form))))
 
 (defun lock-formula (noun)
+  "Compile NOUN to a formula."
   (let ((code (lock-match noun 'a)))
     (etypecase code
       (null	#'identity)
@@ -108,6 +95,7 @@
                       ,code)))))))
 
 (defun lock-call (noun arg)
+  "Emit (possibly optimized) code for a formula call."
   (let ((code (lock-match (deworm noun) arg)))
     (etypecase code
       (null		arg)
@@ -116,13 +104,14 @@
       ((or notom cons)	code))))
 
 (defun lock-match (noun arg)
+  "Emit code for NOUN, possibly applied to ARG."
   (ematch noun
     ([b c] when (consp b)	$ 19	`(cons ,(lock-call b arg)
                                                ,(lock-call c arg)))
 
     ([0 b]			$ 21	(progn
                                           (check-type b nondex)
-                                          (tree-accessor-symbol b)))
+                                          (tree-accessor-designator b)))
 
     ([1 b]			$ 22	`(quote ,b))
 
@@ -159,3 +148,24 @@
 
     ;; TODO jets
     ([10 _ c]			$ 33	(lock-match c arg))))
+
+(defun lockf-formula (noun)
+  "Compile NOUN to a formula and cache it."
+  (typecase (car noun)
+    (wormula	(wormula-formula (car noun)))
+    (t		(let ((formula (lock-formula noun)))
+                  (prog1 formula
+                    (setf (car noun)
+                          (make-wormula :original (car noun)
+                                        :formula formula)))))))
+
+(defun lock (term)
+  "The compiling Nock evaluator."
+  (let ((noun (nerm-noun term)))
+    (ecase (nerm-op term)
+      (*	(funcall (lockf-formula (cdr noun)) (car noun)))
+
+      (?	(noolify (consp noun)))
+      (+	(1+ noun))
+      (=	(noolify (equal (carn noun) (cdr noun))))
+      (/	(funcall (tree-accessor (carn noun)) (cdr noun))))))

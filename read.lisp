@@ -1,7 +1,5 @@
 (in-package nock)
 
-(defvar *annotation* nil)
-(defvar *sub-count*)
 (defvar *inner-nerm-read-context-p* nil)
 
 (defun nell-reader (stream char)
@@ -27,7 +25,7 @@ Also eval it right away, usually."
              (nock ,make-form)))))
 
 (defun nerm-match-reader (stream char)
-  "Read a NERM, or rather make a MATCH pattern that will match it."
+  "Read a NERM, or rather make a MATCH pattern that matches it."
   (declare (ignore char))
   (let ((args (read-delimited-list #\} stream t)))
     `(nerm :op ',(intern (string (first args)) 'nock) :noun ,(second args))))
@@ -43,13 +41,13 @@ Also eval it right away, usually."
 
 (defun spec-reader (stream char)
   "Read and eval a NERM, spec style."
-  (let* ((op (intern (make-string 1 :initial-element char) 'nock))
-         (noun (let ((*inner-nerm-read-context-p* t))
-                 (read stream t nil t))))
+  (let ((op (intern (make-string 1 :initial-element char) 'nock))
+        (noun (let ((*inner-nerm-read-context-p* t))
+                (read stream t nil t))))
     `(nock (make-nerm :op ',op :noun ,noun))))
 
 (defun dollar-reader (stream char)
-  "Activate the eval readtable for the next one or two SEXPs.
+  "Read the next two SEXPs in the eval readtable.
 The first SEXP is unevaluated, and is taken to be the *ANNOTATION* for
 the second SEXP's dynamic extent."
   (declare (ignore char))
