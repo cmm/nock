@@ -89,99 +89,80 @@
              (eqn (carn b) (carn c))
              (eqn (cdr b) (cdr c))))))
 
-(defmacro mbda ((arg) (&rest sub-formulae) &body body &environment env)
-  (let ((mbda-name (let ((annotation (macroexpand-1 '(annotation) env)))
-                     (intern (format nil "RULE-~{~a~^:~}" (reverse annotation))
-                             'nock))))
-    (labels ((bda (body)
-               `(locally
-                    (declare (optimize (debug 0) (safety 0) (speed 3)))
-                  (named-lambda ,mbda-name (,arg)
-                    (declare (type noun ,arg))
-                    ,@body)))
-             (all-subsets (list)
-               (when list
-                 (let* ((tail-subsets (all-subsets (cdr list)))
-                        (tail-subsets (or tail-subsets (list tail-subsets))))
-                   (append tail-subsets
-                           (mapcar (lambda (s)
-                                     (cons (car list) s))
-                                   tail-subsets)))))
-             (uncall (ids body)
-               ;; a very crude code walker -- if the body uses CALL
-               ;; other than as an actual function call, bad things
-               ;; will happen
-               (labels ((rec (body)
-                          (ematch body
-                            (a when (atom a) a)
-                            ((list 'call f rest) when (member f ids)
-                             (rec rest))
-                            ((cons car cdr)
-                             (cons (rec car) (rec cdr))))))
-                 (rec body)))
-             (sans-id (names)
-               `((and ,@(loop :for name :in names
-                              :collect `(eqn ,name (%I))))
-                 ,(bda (uncall names body)))))
-  `(let (,@(loop :for name :in sub-formulae
-                 :collect `(,name (lockf-formula ,name))))
-     (cond
-       ,@(loop :for names :in (sort (all-subsets sub-formulae)
-                                    (lambda (a b) (> (length a) (length b))))
-               :collect (sans-id names)))))))
-
-(declaim (ftype (function (cons) formula) lockf-formula))
 (defun lock-formula (noun)
-  (declare (optimize (debug 3) (safety 3) (speed 1))
-           (type cons noun))
+  (let ((code (lock-fragment noun 'a)))
+    (etypecase code
+      (null
+       nil)
+      (function
+       code)
+      (symbol
+       (fdefinition code))
+      (cons
+       (compile*
+        `(locally
+             (declare (optimize (debug 0) (safety 0) (speed 3)))
+           (lambda (a)
+             ,code)))))))
+
+(defun deworm (noun)
+  (etypecase noun
+    (cons	(cons (deworm (car noun)) (deworm (cdr noun))))
+    (notom	noun)
+    (wormula	(deworm (wormula-original noun)))))
+
+(defun lock-call (noun arg)
+  (let ((code (lock-fragment (deworm noun) arg)))
+    (etypecase code
+      (null
+       arg)
+      (function
+       `(funcall ,code ,arg))
+      (symbol
+       `(,code ,arg))
+      ((or notom cons)
+       code))))
+
+(defun lock-fragment (noun arg)
   (ematch noun
-    ([b c] when (consp b)	$ 19	(mbda (a) (b c)
-                                          (cons (call b a) (call c a))))
+    ([b c] when (consp b)	$ 19	`(cons ,(lock-call b arg)
+                                               ,(lock-call c arg)))
 
     ([0 b]			$ 21	(progn
                                           (check-type b nondex)
                                           (tree-accessor b)))
 
-    ([1 b]			$ 22	(constantly b))
+    ([1 b]			$ 22	`(quote ,b))
 
-    ([2 b c]			$ 23	(mbda (a) (b c)
-                                          (call (lock-formula (call c a))
-                                                (call b a))))
+    ([2 b c]			$ 23	`(call (lockf-formula ,(lock-call c arg))
+                                               ,(lock-call b arg)))
 
-    ([3 b]			$ 24	(mbda (a) (b)
-                                          (noolify (consp (call b a)))))
-    ([4 b]			$ 25	(mbda (a) (b)
-                                          (let ((notom (call b a)))
-                                            (check-type notom number)
-                                            (1+ notom))))
-    ([5 b]			$ 26	(mbda (a) (b)
-                                          (let ((noun (call b a)))
-                                            (check-type noun cons)
-                                            (noolify (eqn (carn noun) (cdr noun))))))
-    ([6 b c d]			$ 28	(mbda (a) (b c d)
-                                          (let ((cond (call b a)))
-                                            (check-type cond noolean)
-                                            (if (zerop cond)
-                                                (call c a)
-                                                (call d a)))))
+    ([3 b]			$ 24	`(noolify (consp ,(lock-call b arg))))
+    ([4 b]			$ 25	`(let ((notom ,(lock-call b arg)))
+                                           (check-type notom number)
+                                           (1+ notom)))
+    ([5 b]			$ 26	`(let ((noun ,(lock-call b arg)))
+                                           (check-type noun cons)
+                                           (noolify (eqn (carn noun) (cdr noun)))))
+    ([6 b c d]			$ 28	`(let ((condition ,(lock-call b arg)))
+                                           (check-type condition noolean)
+                                           (if (zerop condition)
+                                               ,(lock-call c arg)
+                                               ,(lock-call d arg))))
 
-    ([7 b c]			$ 29	(mbda (a) (b c)
-                                          (call c (call b a))))
+    ([7 b c]			$ 29	(lock-call c (lock-call b arg)))
 
-    ([8 b c]			$ 30	(mbda (a) (b c)
-                                          (call c [(call b a) a])))
+    ([8 b c]			$ 30	(lock-call c `[,(lock-call b arg) ,arg]))
 
-    ([9 b c]			$ 31	(let ((accessor (tree-accessor b)))
-                                          (mbda (a) (c)
-                                            (funcall (lambda (core)
-                                                       (call (lockf-formula
-                                                              (call accessor core))
-                                                             core))
-                                                     (call c a)))))
+    ([9 b c]			$ 31	`(funcall (lambda (core)
+                                                    (call (lockf-formula
+                                                           ,(lock-call [0 b] 'core))
+                                                          core))
+                                                  ,(lock-call c arg)))
 
-    ([10 [_ c] d]		$ 32	(mbda (a) (c d)
-                                          (call c a)
-                                          (call d a)))
+    ([10 [_ c] d]		$ 32	`(progn
+                                           ,(lock-call c arg)
+                                           ,(lock-call d arg)))
 
     ;; TODO jets
-    ([10 _ c]			$ 33	(lockf-formula c))))
+    ([10 _ c]			$ 33	(lock-fragment c arg))))

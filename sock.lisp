@@ -19,7 +19,7 @@
 
 (define-primitive %K 1 value)
 (define-primitive %S 2 a b)
-(defun %I () (load-time-value (%elt 1) t))
+(defun %I () (load-time-value (%elt 1) nil))
 
 (define-primitive %if 6 condition then else)
 
