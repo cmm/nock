@@ -38,7 +38,7 @@
                (cond
                  ((< idx +inline-tree-accessor-max+)
                   (locally (declare (type fixnum idx))
-                    (funcall (the formula-function (elt +shallow-tree-accessors+ (- idx 2)))
+                    (funcall (the formula (elt +shallow-tree-accessors+ (- idx 2)))
                              tree)))
                  (t (multiple-value-bind (quotent remainder)
                         (floor idx 2)
@@ -52,7 +52,7 @@
     ((= idx 1)
      nil)
     ((<= (1+ idx) +inline-tree-accessor-max+)
-     (the formula-function (elt +shallow-tree-accessors+ (- idx 2))))
+     (elt +shallow-tree-accessors+ (- idx 2)))
     (t
      (deep-tree-accessor idx))))
 
@@ -67,18 +67,11 @@
     (t
      (deep-tree-accessor idx))))
 
-;;; Wrap FUNCALL to accomodate NIL (which stands in for #'IDENTITY)
-(declaim (inline call))
-(defun call (function a)
-  (if function
-      (funcall (the formula-function function) a)
-      a))
-
 (defun lock (term)
   "The compiling Nock evaluator."
   (let ((noun (nerm-noun term)))
     (ecase (nerm-op term)
-      (*	(call (lockf-formula (cdr noun)) (car noun)))
+      (*	(funcall (lockf-formula (cdr noun)) (car noun)))
 
       (?	(noolify (consp noun)))
       (+	(1+ noun))
@@ -101,7 +94,7 @@
   (let ((code (lock-match noun 'a)))
     (etypecase code
       (null
-       nil)
+       #'identity)
       (function
        code)
       (symbol
@@ -136,8 +129,9 @@
 
     ([1 b]			$ 22	`(quote ,b))
 
-    ([2 b c]			$ 23	`(call (lockf-formula ,(lock-call c arg))
-                                               ,(lock-call b arg)))
+    ([2 b c]			$ 23	`(funcall (the formula
+                                                       (lockf-formula ,(lock-call c arg)))
+                                                  ,(lock-call b arg)))
 
     ([3 b]			$ 24	`(noolify (consp ,(lock-call b arg))))
     ([4 b]			$ 25	`(let ((notom ,(lock-call b arg)))
@@ -157,9 +151,9 @@
     ([8 b c]			$ 30	(lock-call c `[,(lock-call b arg) ,arg]))
 
     ([9 b c]			$ 31	`(funcall (lambda (core)
-                                                    (call (lockf-formula
-                                                           ,(lock-call [0 b] 'core))
-                                                          core))
+                                                    (funcall (the formula
+                                                                  (lockf-formula ,(lock-call [0 b] 'core)))
+                                                             core))
                                                   ,(lock-call c arg)))
 
     ([10 [_ c] d]		$ 32	`(progn

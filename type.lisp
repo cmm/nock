@@ -11,14 +11,9 @@
   "NOck iIDEX: a value suitable for 0"
   '(integer 1))
 
-(deftype formula-function ()
-  '(function (noun) noun))
-
 (deftype formula ()
-  "Nock formula, or Hoon gate: gets a noun, returns a noun.
-NIL is identity because checking for it it cheaper than funcalling
-#'IDENTITY, go figure."
-  '(or formula-function null))
+  "Nock formula, or Hoon gate: gets a noun, returns a noun."
+  '(function (noun) noun))
 
 (deftype noolean ()
   "Nock bOOLEAN"
