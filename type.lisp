@@ -5,7 +5,7 @@
   '(integer 0))
 
 (deftype noun ()
-  '(or (cons (or cons notom wormula) (or cons notom)) notom))
+  '(or cons notom))
 
 (deftype nondex ()
   "NOck iIDEX: a value suitable for 0"
