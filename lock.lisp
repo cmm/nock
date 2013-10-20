@@ -2,35 +2,51 @@
 (in-readtable impl)
 
 (defconstant +inline-tree-accessor-max+ 256)
-
-(defun generate-tree-access (idx arg)
-  (case idx
-    (2		`(carn ,arg))
-    (3		`(cdr ,arg))
-    (otherwise	(multiple-value-bind (quotent remainder)
-                    (floor idx 2)
-                  (generate-tree-access (+ 2 remainder)
-                                        (generate-tree-access quotent arg))))))
-
-(defun compile* (form)
-  (funcall (compile nil `(lambda () ,form))))
-
 (defparameter +shallow-tree-accessors+
-  (let ((i 2)
-        (res (make-array (list +inline-tree-accessor-max+))))
-    (map-into res
-              (lambda ()
-                (prog1
-                    (let ((name (intern (format nil "/~d" i) 'nock)))
-                      (compile*
-                       `(locally
-                            (declare (optimize (debug 0) (safety 0) (speed 3)))
-                          (named-lambda ,name (.noun.)
-                            (declare (type noun .noun.))
-                            ,(generate-tree-access i '.noun.)))))
-                  (incf i))))))
+  (make-array `(,+inline-tree-accessor-max+)))
 
-(declaim (ftype (function (nondex) formula) tree-accessor))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defun generate-tree-access (idx arg)
+    (case idx
+      (2		`(carn ,arg))
+      (3		`(cdr ,arg))
+      (otherwise	(multiple-value-bind (quotent remainder)
+                            (floor idx 2)
+                          (generate-tree-access (+ 2 remainder)
+                                                (generate-tree-access quotent arg)))))))
+
+(defmacro define-shallow-accessors ()
+  `(locally
+       (declare (optimize (debug 0) (safety 0) (speed 3)))
+     ,@(loop :for i :from 0 :below +inline-tree-accessor-max+
+             :collecting
+             (let* ((idx (+ i 2))
+                    (name (intern (format nil "/~d" idx) 'nock)))
+               `(progn
+                  (declaim (inline ,name))
+                  (defun ,name (.noun.)
+                    (declare (type noun .noun.))
+                    ,(generate-tree-access idx '.noun.))
+                  (setf (elt +shallow-tree-accessors+ ,i) (function ,name)))))))
+(define-shallow-accessors)
+  
+(defun deep-tree-accessor (idx)
+  (locally
+      (declare (optimize (debug 0) (safety 0) (speed 3))
+               (type nondex idx))
+    (labels ((tree-elt (idx tree)
+               (cond
+                 ((< idx +inline-tree-accessor-max+)
+                  (locally (declare (type fixnum idx))
+                    (funcall (the formula-function (elt +shallow-tree-accessors+ (- idx 2)))
+                             tree)))
+                 (t (multiple-value-bind (quotent remainder)
+                        (floor idx 2)
+                      (tree-elt (+ 2 remainder)
+                                (tree-elt quotent tree)))))))
+      (lambda (tree)
+        (tree-elt idx tree)))))
+
 (defun tree-accessor (idx)
   (cond
     ((= idx 1)
@@ -38,21 +54,18 @@
     ((<= (1+ idx) +inline-tree-accessor-max+)
      (the formula-function (elt +shallow-tree-accessors+ (- idx 2))))
     (t
-     (locally
-         (declare (optimize (debug 0) (safety 0) (speed 3))
-                  (type nondex idx))
-       (labels ((tree-elt (idx tree)
-                  (cond
-                    ((< idx +inline-tree-accessor-max+)
-                     (locally (declare (type fixnum idx))
-                       (funcall (the formula-function (elt +shallow-tree-accessors+ (- idx 2)))
-                                tree)))
-                    (t (multiple-value-bind (quotent remainder)
-                           (floor idx 2)
-                         (tree-elt (+ 2 remainder)
-                                   (tree-elt quotent tree)))))))
-         (lambda (tree)
-           (tree-elt idx tree)))))))
+     (deep-tree-accessor idx))))
+
+(defun tree-accessor-symbol (idx)
+  (cond
+    ((= idx 1)
+     nil)
+    ((<= (1+ idx) +inline-tree-accessor-max+)
+     (if-let (sym (find-symbol (format nil "/~d" idx) 'nock))
+       sym
+       (error "no predefined accessor for index ~d" idx)))
+    (t
+     (deep-tree-accessor idx))))
 
 ;;; Wrap FUNCALL to accomodate NIL (which stands in for #'IDENTITY)
 (declaim (inline call))
@@ -62,7 +75,7 @@
       a))
 
 (defun lock (term)
-  "The lambda-chaining Nock evaluator."
+  "The compiling Nock evaluator."
   (let ((noun (nerm-noun term)))
     (ecase (nerm-op term)
       (*	(call (lockf-formula (cdr noun)) (car noun)))
@@ -89,8 +102,11 @@
              (eqn (carn b) (carn c))
              (eqn (cdr b) (cdr c))))))
 
+(defun compile* (form)
+  (funcall (compile nil `(lambda () ,form))))
+
 (defun lock-formula (noun)
-  (let ((code (lock-fragment noun 'a)))
+  (let ((code (lock-match noun 'a)))
     (etypecase code
       (null
        nil)
@@ -112,7 +128,7 @@
     (wormula	(deworm (wormula-original noun)))))
 
 (defun lock-call (noun arg)
-  (let ((code (lock-fragment (deworm noun) arg)))
+  (let ((code (lock-match (deworm noun) arg)))
     (etypecase code
       (null
        arg)
@@ -123,14 +139,14 @@
       ((or notom cons)
        code))))
 
-(defun lock-fragment (noun arg)
+(defun lock-match (noun arg)
   (ematch noun
     ([b c] when (consp b)	$ 19	`(cons ,(lock-call b arg)
                                                ,(lock-call c arg)))
 
     ([0 b]			$ 21	(progn
                                           (check-type b nondex)
-                                          (tree-accessor b)))
+                                          (tree-accessor-symbol b)))
 
     ([1 b]			$ 22	`(quote ,b))
 
@@ -165,4 +181,4 @@
                                            ,(lock-call d arg)))
 
     ;; TODO jets
-    ([10 _ c]			$ 33	(lock-fragment c arg))))
+    ([10 _ c]			$ 33	(lock-match c arg))))

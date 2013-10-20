@@ -70,8 +70,7 @@ does tend to make tracing less informative.
 limited to 32.  I know, no need to thank me.  To raise the limit,
 `(setf nock:*max-reductions* <something-higher>)`.
 
-8. Also you may want to try the "compiler" (it's a mostly-naive lambda
-chainer, actually) by doing `(nock:set-evaluation-mode :lock)`.  It
-relies on the underlying CL compiler for tail recursion optimization
-(SBCL's good for it, perhaps some others are too).  There's no
-tracing.
+8. Also you may want to try the compiler by doing
+`(nock:set-evaluation-mode :lock)`.  It relies on the underlying CL
+compiler for tail recursion optimization (SBCL's good for it, perhaps
+some others are too).  There's no tracing and probably some bugs.

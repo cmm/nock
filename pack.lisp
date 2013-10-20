@@ -10,6 +10,7 @@
                 #:in-readtable)
   (:import-from :alexandria
                 #:when-let
+                #:if-let
                 #:named-lambda)
 
   (:export #:set-evaluation-mode
