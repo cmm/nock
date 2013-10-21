@@ -10,7 +10,8 @@
   (:import-from :alexandria
                 #:when-let
                 #:if-let
-                #:named-lambda)
+                #:named-lambda
+                #:positive-fixnum)
 
   (:export #:set-evaluation-mode
            #:*max-reductions*

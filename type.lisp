@@ -1,4 +1,5 @@
 (in-package nock)
+(in-readtable :standard)
 
 (deftype notom ()
   "NOck aTOM: an unsigned integer"
@@ -9,7 +10,7 @@
 
 (deftype nondex ()
   "NOck iIDEX: a value suitable for 0"
-  '(integer 1))
+  'positive-fixnum)
 
 (deftype formula ()
   "Nock formula, or Hoon gate: gets a noun, returns a noun."
@@ -36,8 +37,8 @@ car with a wormula.  But we still need the ability to treat the noun
 as noun."
   (let ((thing (car noun)))
     (typecase thing
-      (wormula	(wormula-original thing))
-      (t	thing))))
+      (wormula  (wormula-original thing))
+      (t        thing))))
 
 (locally
     (declare #.*optimize-speed*)
@@ -51,6 +52,6 @@ We cannot just use EQUAL, because of wormulae."
 
 (defun deworm (noun)
   (etypecase noun
-    (cons	(cons (deworm (car noun)) (deworm (cdr noun))))
-    (notom	noun)
-    (wormula	(deworm (wormula-original noun)))))
+    (cons       (cons (deworm (car noun)) (deworm (cdr noun))))
+    (notom      noun)
+    (wormula    (deworm (wormula-original noun)))))

@@ -1,4 +1,5 @@
 (in-package nock)
+(in-readtable :standard)
 
 (defvar *tracedp* t)
 (defvar *max-reductions* 32

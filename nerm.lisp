@@ -1,4 +1,5 @@
 (in-package nock)
+(in-readtable :standard)
 
 (defstruct (nerm (:predicate nermp))
   "Nock tERM"

@@ -8,8 +8,8 @@
 Sets things up according to the value of *TRACE*, catches nacks."
   (let ((*reduction-counter* 0)
         (*nock* (case *evaluation-mode*
-                  (:lock	#'lock)
-                  (:nock	(if *tracedp* #'nock-in/traced #'nock-in)))))
+                  (:lock        #'lock)
+                  (:nock        (if *tracedp* #'nock-in/traced #'nock-in)))))
     (catch 'nack
       (funcall *nock* term))))
 

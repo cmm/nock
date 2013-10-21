@@ -1,4 +1,5 @@
 (in-package nock)
+(in-readtable :standard)
 
 ;;; NACK - out-of-band errors
 (defstruct nack

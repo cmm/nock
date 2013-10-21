@@ -1,4 +1,5 @@
 (in-package nock)
+(in-readtable :standard)
 
 (defvar *inner-nerm-read-context-p* nil)
 
