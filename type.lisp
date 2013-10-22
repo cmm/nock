@@ -24,8 +24,8 @@
 (defun noolify (value)
   (if value 0 1))
 
-(defstruct wormula
-  "Wrapped fORMULA"
+(defstruct worm
+  "Wrapped fORMula"
   (formula (error "no formula to wrap") :read-only t :type formula)
   (original (error "no noun to wrap") :read-only t :type noun))
 
@@ -33,18 +33,18 @@
 (defun carn (noun)
   "CAR of Noun.
 Compiled formulae are cached by way of replacing the respective noun's
-car with a wormula.  But we still need the ability to treat the noun
-as noun."
+car with a worm.  But we still need the ability to treat the noun as
+noun."
   (let ((thing (car noun)))
     (typecase thing
-      (wormula  (wormula-original thing))
-      (t        thing))))
+      (worm  (worm-original thing))
+      (t     thing))))
 
 (locally
     (declare #.*optimize-speed*)
   (defun eqn (b c)
     "Equality predicate for nouns.
-We cannot just use EQUAL, because of wormulae."
+We cannot just use EQUAL, because of worms."
     (or (eql b c)
         (and (consp b) (consp c)
              (eqn (carn b) (carn c))
@@ -52,6 +52,6 @@ We cannot just use EQUAL, because of wormulae."
 
 (defun deworm (noun)
   (etypecase noun
-    (cons       (cons (deworm (car noun)) (deworm (cdr noun))))
-    (notom      noun)
-    (wormula    (deworm (wormula-original noun)))))
+    (cons   (cons (deworm (car noun)) (deworm (cdr noun))))
+    (notom  noun)
+    (worm   (deworm (worm-original noun)))))

@@ -19,6 +19,6 @@ Precludes long boring traces before the inevitable failure.")
   (when tail-recursive-p
     (setf *tail-recursive-p* tail-recursive)))
 
-(defvar *optimize-speed* '(optimize (debug 0) (safety 0) (speed 3)))
+(defvar *optimize-speed* '(optimize (debug 1) (safety 1) (speed 3)))
 (defvar *annotation* nil)
 (defvar *sub-count*)

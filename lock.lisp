@@ -157,12 +157,12 @@
 (defun lockf-formula (noun)
   "Compile NOUN to a formula and cache it."
   (typecase (car noun)
-    (wormula    (wormula-formula (car noun)))
-    (t          (let ((formula (lock-formula noun)))
-                  (prog1 formula
-                    (setf (car noun)
-                          (make-wormula :original (car noun)
-                                        :formula formula)))))))
+    (worm  (worm-formula (car noun)))
+    (t     (let ((formula (lock-formula noun)))
+             (prog1 formula
+               (setf (car noun)
+                     (make-worm :original (car noun)
+                                :formula formula)))))))
 
 (defun lock (term)
   "The compiling Nock evaluator."
