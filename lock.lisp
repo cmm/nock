@@ -1,82 +1,33 @@
 (in-package nock)
 (in-readtable base)
 
-(defconstant +inline-tree-accessors-num+ 256
-  "How many tree accessor formulae to precompute.")
-(defconstant +inline-tree-idx-max+
-  (+ +inline-tree-accessors-num+ 2)
-  "One above the largest tree index with a precomputed accessor.")
-(defparameter +inline-tree-accessors+
-  (make-array `(,+inline-tree-accessors-num+)))
-
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (defun tree-accessor-name (idx createp)
-    (let* ((nock-package #.(find-package 'nock))
-           (name (format nil "/~d" idx))
-           (symbol (find-symbol name nock-package)))
-      (or symbol
-          (if createp
-              (intern name nock-package)
-              (error "no inline accessor for idx ~d" idx))))))
-
-(defmacro define-inline-accessors ()
-  (labels ((generate-tree-access (idx arg)
-             (case idx
-               (2               `(carn ,arg))
-               (3               `(cdr ,arg))
-               (otherwise       (let ((sub (ash idx -1))
-                                      (there (+ (logand idx 1) 2)))
-                                  (generate-tree-access
-                                   there
-                                   (generate-tree-access sub arg)))))))
-    `(locally
-         (declare ,*optimize-speed*)
-       ,@(loop :for i :from 0 :below +inline-tree-accessors-num+
-               :collecting
-               (let* ((idx (+ i 2))
-                      (name (tree-accessor-name idx t)))
-                 `(progn
-                    (declaim (inline ,name))
-                    (defun ,name (.noun.)
-                      (declare (type noun .noun.))
-                      ,(generate-tree-access idx '.noun.))
-                    (setf (elt +inline-tree-accessors+ ,i)
-                          (function ,name))))))))
-(define-inline-accessors)
-
-(defun deep-tree-accessor (idx)
-  "Make tree accessor formula for a large index."
-  (locally
-      (declare #.*optimize-speed*
-               (type nondex idx))
-    (labels ((tree-elt (idx tree)
-               (declare (type fixnum idx))
-               (if (< idx +inline-tree-idx-max+)
-                   (funcall
-                    (the formula (elt +inline-tree-accessors+ (- idx 2)))
-                    tree)
-                   (let ((sub (ash idx -1))
-                         (there (+ (logand idx 1) 2)))
-                     (tree-elt there
-                               (tree-elt sub tree))))))
-      (named-lambda deep-tree-accessor (tree)
-        (tree-elt idx tree)))))
+(defun generate-tree-access (idx arg)
+  (case idx
+    (2          `(carn ,arg))
+    (3          `(cdr ,arg))
+    (otherwise  (let ((sub (ash idx -1))
+                      (there (+ (logand idx 1) 2)))
+                  (generate-tree-access
+                   there
+                   (generate-tree-access sub arg))))))
 
 (defun tree-accessor (idx)
-  "Proper tree accessor formula for IDX."
-  (check-type idx nondex)
-  (cond
-    ((= idx 1)                          #'identity)
-    ((< idx +inline-tree-idx-max+)      (elt +inline-tree-accessors+ (- idx 2)))
-    (t                                  (deep-tree-accessor idx))))
-
-(defun tree-accessor-designator (idx)
-  "Tree accessor designator for IDX."
-  (check-type idx nondex)
-  (cond
-    ((= idx 1)                          nil)
-    ((< idx +inline-tree-idx-max+)      (tree-accessor-name idx nil))
-    (t                                  (deep-tree-accessor idx))))
+  "Tree accessor for the given index."
+  (declare #.*optimize-speed*
+           (type nondex idx))
+  (labels ((tree-elt (idx tree)
+             (declare (type fixnum idx))
+             (case idx
+               (2         (carn tree))
+               (3         (cdr tree))
+               (otherwise (let ((sub (ash idx -1))
+                                (there (+ (logand idx 1) 2)))
+                            (tree-elt there
+                                      (tree-elt sub tree)))))))
+      (if (= idx 1)
+          #'identity
+          (named-lambda tree-accessor (tree)
+            (tree-elt idx tree)))))
 
 (defun compile* (form)
   "COMPILE any old form, not just a function name."
@@ -110,9 +61,10 @@
     ([b c] when (consp b)       `(cons ,(lock-call b arg)
                                     ,(lock-call c arg)))
 
-    ([0 b]                      (progn
-                                  (check-type b nondex)
-                                  (tree-accessor-designator b)))
+    ([0 b]                      (etypecase b
+                                  ((eql 1) nil)
+                                  (positive-fixnum
+                                   (generate-tree-access b arg))))
 
     ([1 b]                      `(quote ,b))
 
