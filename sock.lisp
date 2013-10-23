@@ -19,17 +19,18 @@
 
 (define-primitive %K 1 value)
 (define-primitive %S 2 a b)
-(defun %I () (load-time-value (%elt 1) nil))
+(defun %I () (load-time-value (%elt 1)))
 
 (define-primitive %if 6 condition then else)
 
 (defun %dec ()
   "The decrementer example from the crash course."
   ;; is that more or less readable than the numeric form?  dunno.
-  (%cell-compose
-   (%K 0)
+  (load-time-value
    (%cell-compose
-    (%K (%if (%eq [(%elt 7) (%inc (%elt 6))])
-             (%elt 6)
-             (%core-apply 2 [(%elt 2) (%inc (%elt 6)) (%elt 7)])))
-    (%core-apply 2 (%I)))))
+    (%K 0)
+    (%cell-compose
+     (%K (%if (%eq [(%elt 7) (%inc (%elt 6))])
+              (%elt 6)
+              (%core-apply 2 [(%elt 2) (%inc (%elt 6)) (%elt 7)])))
+     (%core-apply 2 (%I))))))

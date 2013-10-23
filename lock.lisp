@@ -33,78 +33,81 @@
   "COMPILE any old form, not just a function name."
   (funcall (compile nil `(lambda () ,form))))
 
+(defparameter *jets* (make-hash-table :test 'equal))
+
 (defun lock-formula (noun)
   "Compile NOUN to a formula."
-  (let ((code (lock-match noun 'a)))
+  (let ((code (lock-match noun)))
     (etypecase code
-      (null     #'identity)
-      (function code)
-      (symbol   (fdefinition code))
-      (cons     (compile*
-                 `(locally
-                      (declare ,*optimize-speed*)
-                    (lambda (a)
-                      ,code)))))))
+      (null  #'identity)
+      (cons  (if-let (jet-symbol (gethash code *jets*))
+               (symbol-function jet-symbol)
+               (compile*
+                `(locally
+                     (declare ,*optimize-speed*)
+                   (lambda (a)
+                     ,code))))))))
 
-(defun lock-call (noun arg)
+(defun lock-call (noun)
   "Emit (possibly optimized) code for a formula call."
-  (let ((code (lock-match (deworm noun) arg)))
+  (let ((code (lock-match noun)))
     (etypecase code
-      (null             arg)
-      (function         `(funcall (the formula ,code) (the noun ,arg)))
-      (symbol           `(,code (the noun ,arg)))
-      ((or notom cons)  code))))
+      (null  'a)
+      (cons  (if-let (jet-symbol (gethash code *jets*))
+               `(funcall (function ,jet-symbol) a)
+               code)))))
 
-(defun lock-match (noun arg)
-  "Emit code for NOUN, possibly applied to ARG."
-  (ematch noun
-    ([b c] when (consp b)       `(cons ,(lock-call b arg)
-                                    ,(lock-call c arg)))
+(defun lock-match (noun)
+  "Emit code for NOUN."
+  (ematch [(carn noun) (cdr noun)]
+    ([b c] when (consp b)    `[,(lock-call b) ,(lock-call c)])
 
-    ([0 b]                      (etypecase b
-                                  ((eql 1) nil)
-                                  (positive-fixnum
-                                   (generate-tree-access b arg))))
+    ([0 b]                   (etypecase b
+                               ((eql 1) nil)
+                               (positive-fixnum
+                                (generate-tree-access b 'a))))
 
-    ([1 b]                      `(quote ,b))
+    ([1 b]                   `(quote ,b))
 
-    ([2 b c]                    `(funcall
-                                  (the formula
-                                       (lockf-formula
-                                        ,(lock-call c arg)))
-                                  (the noun ,(lock-call b arg))))
+    ([2 b c]                 `(funcall
+                               (the formula
+                                    (lockf-formula
+                                     ,(lock-call c)))
+                               (the noun ,(lock-call b))))
 
-    ([3 b]                      `(noolify (consp ,(lock-call b arg))))
-    ([4 b]                      `(let ((notom ,(lock-call b arg)))
-                                   (check-type notom number)
-                                   (1+ notom)))
-    ([5 b]                      `(let ((noun ,(lock-call b arg)))
-                                   (check-type noun cons)
-                                   (noolify (eqn (carn noun) (cdr noun)))))
-    ([6 b c d]                  `(let ((condition ,(lock-call b arg)))
-                                   (check-type condition noolean)
-                                   (if (zerop condition)
-                                       ,(lock-call c arg)
-                                       ,(lock-call d arg))))
+    ([3 b]                   `(noolify (consp ,(lock-call b))))
+    ([4 b]                   `(let ((notom ,(lock-call b)))
+                                (check-type notom number)
+                                (1+ notom)))
+    ([5 b]                   `(let ((noun ,(lock-call b)))
+                                (check-type noun cons)
+                                (noolify (eqn (carn noun) (cdr noun)))))
+    ([6 b c d]               `(let ((condition ,(lock-call b)))
+                                (check-type condition noolean)
+                                (if (zerop condition)
+                                    ,(lock-call c)
+                                    ,(lock-call d))))
 
-    ([7 b c]                    (lock-call c (lock-call b arg)))
+    ([7 b c]                 `(let ((a ,(lock-call b)))
+                                ,(lock-call c)))
 
-    ([8 b c]                    (lock-call c `[,(lock-call b arg) ,arg]))
+    ([8 b c]                 `(let ((a [,(lock-call b) a]))
+                                ,(lock-call c)))
 
-    ([9 b c]                    `(funcall
-                                  (lambda (core)
-                                    (funcall (the formula
-                                                  (lockf-formula
-                                                   ,(lock-call [0 b] 'core)))
-                                             (the noun core)))
-                                  ,(lock-call c arg)))
+    ([9 b c]                 `(funcall
+                               (lambda (a)
+                                 (funcall (the formula
+                                               (lockf-formula
+                                                ,(lock-call [0 (original b)])))
+                                          (the noun a)))
+                               ,(lock-call c)))
 
-    ([10 [_ c] d]               `(progn
-                                   ,(lock-call c arg)
-                                   ,(lock-call d arg)))
+    ([10 [_ c] d]            `(progn
+                                ,(lock-call c)
+                                ,(lock-call d)))
 
-    ;; TODO jets
-    ([10 _ c]                   (lock-match c arg))))
+    ;; We find jets by code recognition, so ignore any hints
+    ([10 _ c]                (lock-match c))))
 
 (defun lockf-formula (noun)
   "Compile NOUN to a formula and cache it."
@@ -124,5 +127,15 @@
 
       (?        (noolify (consp noun)))
       (+        (1+ noun))
-      (=        (noolify (equal (carn noun) (cdr noun))))
+      (=        (noolify (eqn (carn noun) (cdr noun))))
       (/        (funcall (tree-accessor (carn noun)) (cdr noun))))))
+
+(defmacro define-jet (name (arg) noun &body body)
+  "Define a jet named NAME that does whatever NOUN is supposed to."
+  (let ((name (intern (format nil "JET/~a" name) #.(find-package 'nock))))
+    `(let ((.code. (lock-match ,noun)))
+       (locally
+           (declare ,*optimize-speed*)
+         (defun ,name (,arg)
+           ,@body))
+       (setf (gethash .code. *jets*) ',name))))

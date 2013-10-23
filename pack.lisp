@@ -18,6 +18,8 @@
            #:spel
            #:spec
 
+           #:define-jet
+
            ;; parenthesized primitives
            #:%hint
            #:%cellp

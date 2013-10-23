@@ -29,16 +29,19 @@
   (formula (error "no formula to wrap") :read-only t :type formula)
   (original (error "no noun to wrap") :read-only t :type noun))
 
+(declaim (inline original))
+(defun original (thing)
+  (typecase thing
+    (worm  (worm-original thing))
+    (t     thing)))
+
 (declaim (inline carn))
 (defun carn (noun)
   "CAR of Noun.
 Compiled formulae are cached by way of replacing the respective noun's
 car with a worm.  But we still need the ability to treat the noun as
 noun."
-  (let ((thing (car noun)))
-    (typecase thing
-      (worm  (worm-original thing))
-      (t     thing))))
+  (original (car noun)))
 
 (locally
     (declare #.*optimize-speed*)
