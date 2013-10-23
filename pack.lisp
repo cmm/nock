@@ -19,6 +19,7 @@
            #:spec
 
            #:define-jet
+           #:define-jet-macro
 
            ;; parenthesized primitives
            #:%hint

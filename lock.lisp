@@ -40,8 +40,10 @@
   (let ((code (lock-match noun)))
     (etypecase code
       (null  #'identity)
-      (cons  (if-let (jet-symbol (gethash code *jets*))
-               (symbol-function jet-symbol)
+      (cons  (if-let (jet (gethash code *jets*))
+               (ematch jet
+                 (['function name]  (symbol-function name))
+                 (['macro _ name]   (symbol-function name)))
                (compile*
                 `(locally
                      (declare ,*optimize-speed*)
@@ -53,8 +55,10 @@
   (let ((code (lock-match noun)))
     (etypecase code
       (null  'a)
-      (cons  (if-let (jet-symbol (gethash code *jets*))
-               `(funcall (function ,jet-symbol) a)
+      (cons  (if-let (jet (gethash code *jets*))
+               (ematch jet
+                 (['function name] `(funcall (function ,name) a))
+                 (['macro name _]  `(,name a)))
                code)))))
 
 (defun lock-match (noun)
@@ -130,12 +134,26 @@
       (=        (noolify (eqn (carn noun) (cdr noun))))
       (/        (funcall (tree-accessor (carn noun)) (cdr noun))))))
 
-(defmacro define-jet (name (arg) noun &body body)
-  "Define a jet named NAME that does whatever NOUN is supposed to."
+(defmacro define-jet (name noun (arg) &body body)
+  "Define a jet NAME that does whatever NOUN does."
   (let ((name (intern (format nil "JET/~a" name) #.(find-package 'nock))))
     `(let ((.code. (lock-match ,noun)))
        (locally
            (declare ,*optimize-speed*)
          (defun ,name (,arg)
            ,@body))
-       (setf (gethash .code. *jets*) ',name))))
+       (setf (gethash .code. *jets*) ['function ',name]))))
+
+(defmacro define-jet-macro (name noun (arg) &body body)
+  "Define a jet macro NAME that does whatever NOUN does."
+  (let ((name (intern (format nil "JET/~a" name) #.(find-package 'nock)))
+        (macro-name (intern (format nil "MACROJET/~a" name) #.(find-package 'nock))))
+    `(progn
+       (defmacro ,macro-name (,arg)
+         ,@body)
+       (let ((.code. (lock-match ,noun)))
+         (locally
+             (declare ,*optimize-speed*)
+           (defun ,name (arg)
+             (,macro-name arg)))
+         (setf (gethash .code. *jets*) ['macro ',macro-name ',name])))))
