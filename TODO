@@ -1,0 +1,7 @@
+* pass env to jet macros
+* way to define primitives (dedicated op numbers, born worm-infested)
+* simple optimization idea: flag leaf formulae
+   and dynamic-extent their consed-up args
+* perhaps try to pass up meta-info about Nock forms
+   just in case case it's useful later.  like leafness, consiness,
+   whether the parameter is passed somewhere, etc.
