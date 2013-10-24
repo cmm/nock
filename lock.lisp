@@ -43,7 +43,7 @@
       (cons  (if-let (jet (gethash code *jets*))
                (ematch jet
                  (['function name]  (symbol-function name))
-                 (['macro _ name]   (symbol-function name)))
+                 (['macro    name]  (get name 'callable)))
                (compile*
                 `(locally
                      (declare ,*optimize-speed*)
@@ -57,8 +57,7 @@
       (null  'a)
       (cons  (if-let (jet (gethash code *jets*))
                (ematch jet
-                 (['function name] `(funcall (function ,name) a))
-                 (['macro name _]  `(,name a)))
+                 ([_ name]  `(,name a)))
                code)))))
 
 (defun lock-match (noun)
@@ -81,7 +80,7 @@
 
     ([3 b]                   `(noolify (consp ,(lock-call b))))
     ([4 b]                   `(let ((notom ,(lock-call b)))
-                                (check-type notom number)
+                                (check-type notom notom)
                                 (1+ notom)))
     ([5 b]                   `(let ((noun ,(lock-call b)))
                                 (check-type noun cons)
@@ -136,24 +135,23 @@
 
 (defmacro define-jet (name noun (arg) &body body)
   "Define a jet NAME that does whatever NOUN does."
-  (let ((name (intern (format nil "JET/~a" name) #.(find-package 'nock))))
-    `(let ((.code. (lock-match ,noun)))
-       (locally
-           (declare ,*optimize-speed*)
-         (defun ,name (,arg)
-           ,@body))
-       (setf (gethash .code. *jets*) ['function ',name]))))
+  `(let ((.code. (lock-match ,noun)))
+     (locally
+         (declare ,*optimize-speed*)
+       (defun ,name (,arg)
+         ,@body))
+     (setf (gethash .code. *jets*) ['function ',name])))
 
 (defmacro define-jet-macro (name noun (arg) &body body)
   "Define a jet macro NAME that does whatever NOUN does."
-  (let ((name (intern (format nil "JET/~a" name) #.(find-package 'nock)))
-        (macro-name (intern (format nil "MACROJET/~a" name) #.(find-package 'nock))))
-    `(progn
-       (defmacro ,macro-name (,arg)
-         ,@body)
-       (let ((.code. (lock-match ,noun)))
-         (locally
-             (declare ,*optimize-speed*)
-           (defun ,name (arg)
-             (,macro-name arg)))
-         (setf (gethash .code. *jets*) ['macro ',macro-name ',name])))))
+  `(progn
+     (defmacro ,name (,arg)
+       ,@body)
+     (let ((.code. (lock-match ,noun)))
+       (setf (get ',name 'callable)
+             (locally
+                 (declare ,*optimize-speed*)
+               (flet ((,name (arg)
+                        (,name arg)))
+                 (function ,name))))
+       (setf (gethash .code. *jets*) ['macro ',name]))))
