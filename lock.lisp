@@ -142,10 +142,13 @@
          ,@body))
      (setf (gethash .code. *jets*) ['function ',name])))
 
-(defmacro define-jet-macro (name noun (arg) &body body)
+(defmacro define-jet-macro (name noun (&rest args) &body body)
   "Define a jet macro NAME that does whatever NOUN does."
+  (unless-match (list _) args
+    (unless-match (list _ '&environment _) args
+      (error "Malformed argument list")))
   `(progn
-     (defmacro ,name (,arg)
+     (defmacro ,name (,@args)
        ,@body)
      (let ((.code. (lock-match ,noun)))
        (setf (get ',name 'callable)

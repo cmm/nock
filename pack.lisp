@@ -2,6 +2,8 @@
   (:use :cl)
   (:import-from :optima
                 #:ematch)
+  (:import-from :optima.extra
+                #:unless-match)
   (:import-from :named-readtables
                 #:defreadtable
                 #:find-readtable

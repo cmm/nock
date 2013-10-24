@@ -1,4 +1,3 @@
-* pass env to jet macros
 * way to define primitives (dedicated op numbers, born worm-infested)
 * simple optimization idea: flag leaf formulae
    and dynamic-extent their consed-up args
